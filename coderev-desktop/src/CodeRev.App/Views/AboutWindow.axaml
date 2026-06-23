@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CodeRev.App.Views.AboutWindow"
+        Width="560" Height="620"
+        WindowStartupLocation="CenterOwner"
+        Icon="/Assets/coderev.png"
+        Title="coderev Desktop — Infó">
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Top" Spacing="2">
+      <TextBlock Text="coderev Desktop" FontWeight="Bold" FontSize="20"/>
+      <TextBlock Text="AI-alapú Pull Request review — verzió 1.0.0" Foreground="Gray"/>
+    </StackPanel>
+
+    <Button DockPanel.Dock="Bottom" Content="Bezárás" HorizontalAlignment="Right"
+            Margin="0,12,0,0" Click="OnClose"/>
+
+    <ScrollViewer Margin="0,12,0,0">
+      <StackPanel Spacing="14" MaxWidth="500" HorizontalAlignment="Left">
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="Mi ez?" FontWeight="Bold" FontSize="15"/>
+          <TextBlock TextWrapping="Wrap" Text="Egy eszköz, amely egy git ág módosításait (diff) átadja egy AI-ügynöknek, és visszaadja a kód-review-t. A nehéz munkát (git, diff, prompt, az ügynök futtatása) a coderev motor végzi; ez a grafikus felület átláthatóan jeleníti meg a folyamatot, a diffet és a review-t."/>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="Hogyan használd?" FontWeight="Bold" FontSize="15"/>
+          <TextBlock TextWrapping="Wrap" Text="1.  Nyiss meg egy git repository-t a 📂 gombbal."/>
+          <TextBlock TextWrapping="Wrap" Text="2.  Válassz branchet (a mező autocomplete-tel segít a helyi ágakból, de kézzel is beírható) és egy base referenciát (pl. origin/main)."/>
+          <TextBlock TextWrapping="Wrap" Text="3.  Válassz agentet és nyelvet, majd nyomd meg a ▶ Review indítása gombot."/>
+          <TextBlock TextWrapping="Wrap" Text="A lépések, a diff és az AI válasza élőben jelennek meg. A review exportálható (.md / .html), a korábbi futások az Előzmények fülön visszatölthetők, a téma váltható."/>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="Használat AI-jal" FontWeight="Bold" FontSize="15"/>
+          <TextBlock TextWrapping="Wrap" Text="Az AI-t egy külső parancssori „agent” adja, amelyet a motor meghív, és átadja neki a promptot (a diffet és a kontextust). Beépített agentek:"/>
+          <TextBlock TextWrapping="Wrap" Margin="10,0,0,0" Text="•  codex — OpenAI Codex CLI"/>
+          <TextBlock TextWrapping="Wrap" Margin="10,0,0,0" Text="•  copilot — GitHub Copilot CLI"/>
+          <TextBlock TextWrapping="Wrap" Margin="10,0,0,0" Text="•  claude — Claude Code CLI"/>
+          <TextBlock TextWrapping="Wrap" Text="Egyedi ügynök is megadható a ⚙ Beállítások ablakban (agent-config JSON: parancs + mód)."/>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+          <TextBlock Text="Mi szükséges hozzá?" FontWeight="Bold" FontSize="15"/>
+          <TextBlock TextWrapping="Wrap" Text="•  git a PATH-on (a repo elemzéséhez)."/>
+          <TextBlock TextWrapping="Wrap" Text="•  A kiválasztott agent CLI telepítve és bejelentkezve a PATH-on. Fontos: a Claude esetén a különálló Claude Code CLI kell (npm i -g @anthropic-ai/claude-code) — a szerkesztő-plugin önmagában nem elég."/>
+          <TextBlock TextWrapping="Wrap" Text="•  A coderev motor bináris: a CODEREV_BIN környezeti változó, vagy az alkalmazás mellé csomagolva, vagy a PATH-on."/>
+          <TextBlock TextWrapping="Wrap" Text="Tipp: a Dry-run pipa bekapcsolásával AI (és költség) nélkül lefut a teljes folyamat — látod a lépéseket és a diffet, csak a review marad üres. Jó az induló kipróbáláshoz."/>
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

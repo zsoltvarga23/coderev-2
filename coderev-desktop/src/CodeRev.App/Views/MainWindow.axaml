@@ -1,0 +1,198 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CodeRev.App.ViewModels"
+        xmlns:m="using:CodeRev.Core.Models"
+        xmlns:hist="using:CodeRev.Core.History"
+        xmlns:conv="using:CodeRev.App.Converters"
+        x:Class="CodeRev.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Width="1040" Height="700"
+        Icon="/Assets/coderev.png"
+        Title="coderev Desktop">
+
+  <Window.Resources>
+    <conv:DiffBackgroundConverter x:Key="DiffBg"/>
+    <conv:DiffLineNumberConverter x:Key="LineNo"/>
+    <conv:SeverityBrushConverter x:Key="SevBg"/>
+  </Window.Resources>
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="12">
+
+    <!-- Setup bar -->
+    <Border Grid.Row="0" Padding="10" Margin="0,0,0,10"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            CornerRadius="6">
+      <StackPanel Spacing="8">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto" RowDefinitions="Auto,Auto">
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Repo:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+          <DockPanel Grid.Row="0" Grid.Column="1" Margin="0,0,8,4">
+            <Button DockPanel.Dock="Right" Content="📂" Click="OnBrowseRepo" Margin="6,0,0,0"
+                    ToolTip.Tip="Mappa / repository tallózása"/>
+            <TextBox Watermark="git repo útvonala" Text="{Binding RepositoryPath}"/>
+          </DockPanel>
+          <TextBlock Grid.Row="0" Grid.Column="2" Text="Branch:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+          <AutoCompleteBox Grid.Row="0" Grid.Column="3" Width="200" Watermark="feature/x"
+                           Text="{Binding Branch}" ItemsSource="{Binding Branches}"
+                           FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
+                           IsTextCompletionEnabled="False" Margin="0,0,0,4"/>
+
+          <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
+                      Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Base:" VerticalAlignment="Center"/>
+            <TextBox Width="160" Text="{Binding BaseRef}" Watermark="origin/main"/>
+            <TextBlock Text="Agent:" VerticalAlignment="Center"/>
+            <ComboBox ItemsSource="{Binding AgentOptions}" SelectedItem="{Binding Agent}" Width="120"
+                      PlaceholderText="claude"/>
+            <TextBlock Text="Nyelv:" VerticalAlignment="Center"/>
+            <ComboBox ItemsSource="{Binding LangOptions}" SelectedItem="{Binding Lang}" Width="110"
+                      PlaceholderText="en"/>
+            <CheckBox Content="Dry-run" IsChecked="{Binding DryRun}"/>
+          </StackPanel>
+        </Grid>
+
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+            <Button Content="ℹ Infó" Click="OnOpenAbout" ToolTip.Tip="Az alkalmazásról és az AI-használatról"/>
+            <Button Content="⚙ Beállítások" Click="OnOpenConfigEditor"/>
+            <Button Content="⤓ .md" Click="OnExportMarkdown" ToolTip.Tip="Review exportálása Markdownba"/>
+            <Button Content="⤓ .html" Click="OnExportHtml" ToolTip.Tip="Review exportálása HTML-be"/>
+            <Button Content="🌓 Téma" Click="OnToggleTheme"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="▶ Review indítása" Command="{Binding RunCommand}"/>
+            <Button Content="■ Stop" Command="{Binding StopCommand}"/>
+          </StackPanel>
+        </DockPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- Main content: steps + tabs -->
+    <Grid Grid.Row="1" ColumnDefinitions="280,*">
+      <Border Grid.Column="0" Padding="8" Margin="0,0,10,0"
+              Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+              CornerRadius="6">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="Lépések" FontWeight="Bold" Margin="2,0,0,8"/>
+          <TextBlock DockPanel.Dock="Bottom" Text="{Binding MetaText}"
+                     TextWrapping="Wrap" Foreground="Gray" Margin="2,8,0,0"/>
+          <ItemsControl ItemsSource="{Binding Steps}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:StepViewModel">
+                <Grid ColumnDefinitions="Auto,*" Margin="0,3">
+                  <TextBlock Grid.Column="0" Text="{Binding Glyph}" Width="20"/>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Label}"/>
+                    <TextBlock Text="{Binding Detail}" Foreground="Gray" FontSize="11"
+                               IsVisible="{Binding Detail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </DockPanel>
+      </Border>
+
+      <TabControl Grid.Column="1">
+        <!-- Review: color-coded, sectioned cards (falls back to raw stream) -->
+        <TabItem Header="Review">
+          <ScrollViewer>
+            <StackPanel Margin="6">
+              <ItemsControl ItemsSource="{Binding ReviewSections}" IsVisible="{Binding HasSections}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="m:ReviewSection">
+                    <Border Margin="0,0,0,8" CornerRadius="6" BorderThickness="1" BorderBrush="#22808080">
+                      <StackPanel>
+                        <Border Background="{Binding Severity, Converter={StaticResource SevBg}}"
+                                Padding="8,4" CornerRadius="6,6,0,0">
+                          <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="Bold"/>
+                        </Border>
+                        <SelectableTextBlock Text="{Binding Body}" Margin="10" TextWrapping="Wrap"/>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <SelectableTextBlock Text="{Binding ReviewText}" IsVisible="{Binding !HasSections}"
+                                   FontFamily="Cascadia Code,Consolas,monospace" TextWrapping="Wrap"/>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <!-- Diff: file sidebar + colored, line-numbered rows -->
+        <TabItem Header="Diff">
+          <Grid ColumnDefinitions="210,*">
+            <DockPanel Grid.Column="0" Margin="0,0,8,0">
+              <Button DockPanel.Dock="Top" Content="◂ Mind" Command="{Binding ShowAllFilesCommand}"
+                      HorizontalAlignment="Stretch" Margin="0,0,0,6"/>
+              <ListBox ItemsSource="{Binding DiffFiles}" SelectedItem="{Binding SelectedDiffFile}">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="m:DiffFile">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Path}" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Text="{Binding Summary}" FontSize="10" Foreground="Gray"/>
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </DockPanel>
+
+            <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto">
+              <ItemsControl ItemsSource="{Binding VisibleDiffLines}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="m:DiffLine">
+                    <Border Background="{Binding Kind, Converter={StaticResource DiffBg}}">
+                      <Grid ColumnDefinitions="48,*">
+                        <TextBlock Grid.Column="0" Text="{Binding Converter={StaticResource LineNo}}"
+                                   Foreground="Gray" TextAlignment="Right" Margin="0,0,8,0"
+                                   FontFamily="Cascadia Code,Consolas,monospace" FontSize="12"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Text}"
+                                   FontFamily="Cascadia Code,Consolas,monospace" FontSize="12"/>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Előzmények">
+          <DockPanel Margin="6">
+            <TextBlock DockPanel.Dock="Top" Foreground="Gray" FontSize="11" Margin="0,0,0,6"
+                       Text="Korábbi futások (kattints a visszatöltéshez)"/>
+            <ListBox ItemsSource="{Binding History}" SelectedItem="{Binding SelectedHistoryEntry}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="hist:ReviewHistoryEntry">
+                  <StackPanel Margin="0,2">
+                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold"/>
+                    <TextBlock FontSize="11" Foreground="Gray">
+                      <Run Text="base:"/><Run Text="{Binding Base}"/>
+                      <Run Text="  ·  agent:"/><Run Text="{Binding Agent}"/>
+                      <Run Text="  ·  "/><Run Text="{Binding ChangedFiles}"/><Run Text=" fájl"/>
+                    </TextBlock>
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="Napló">
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Log}" Margin="6"/>
+          </ScrollViewer>
+        </TabItem>
+      </TabControl>
+    </Grid>
+
+    <!-- Status bar -->
+    <Border Grid.Row="2" Padding="8,6" Margin="0,10,0,0"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            CornerRadius="6">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Text="{Binding AppVersion}" Foreground="Gray" Margin="12,0,0,0"/>
+        <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+    </Border>
+  </Grid>
+</Window>

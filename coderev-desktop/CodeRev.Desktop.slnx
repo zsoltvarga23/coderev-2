@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CodeRev.App/CodeRev.App.csproj" />
+    <Project Path="src/CodeRev.Core.Tests/CodeRev.Core.Tests.csproj" />
+    <Project Path="src/CodeRev.Core/CodeRev.Core.csproj" />
+  </Folder>
+</Solution>
