@@ -12,7 +12,7 @@ public class CoderevConfigTests
         Assert.Equal("origin/main", cfg.BaseRef);
         Assert.Equal("codex", cfg.Agent);
         Assert.Equal(20, cfg.ContextLines);
-        Assert.Equal("hu", cfg.Lang);
+        Assert.Equal("en", cfg.Lang);
         Assert.Empty(cfg.ObeyDoc);
     }
 

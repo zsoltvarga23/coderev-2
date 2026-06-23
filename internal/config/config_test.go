@@ -31,8 +31,8 @@ func TestDefaults(t *testing.T) {
 	if c.ContextLines != 20 {
 		t.Errorf("context-lines = %d, want 20", c.ContextLines)
 	}
-	if c.Lang != "hu" {
-		t.Errorf("lang = %q, want hu", c.Lang)
+	if c.Lang != "en" {
+		t.Errorf("lang = %q, want en", c.Lang)
 	}
 }
 

@@ -5,7 +5,7 @@
   folder, puts the CLI on PATH, and creates a Start Menu shortcut for the GUI.
 
 .DESCRIPTION
-  Designed for small, internal distribution. Nothing is code-signed, so on the
+  Intended for small, internal distribution. Nothing is code-signed, so on the
   first GUI launch Windows SmartScreen may warn ("More info" -> "Run anyway").
 
 .PARAMETER Component
@@ -38,7 +38,6 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BinDir = Join-Path $Prefix 'bin'
 $GuiDir = Join-Path $Prefix 'gui'
@@ -47,7 +46,7 @@ $ShortcutPath = Join-Path ([Environment]::GetFolderPath('Programs')) 'coderev.ln
 function Write-Step($m) { Write-Host "==> $m" -ForegroundColor Cyan }
 function Require-Tool($name, $hint) {
     if (-not (Get-Command $name -ErrorAction SilentlyContinue)) {
-        throw "'$name' nem található a PATH-on. $hint"
+        throw "'$name' was not found on PATH. $hint"
     }
 }
 
@@ -56,7 +55,7 @@ function Add-UserPath($dir) {
     if (($cur -split ';') -notcontains $dir) {
         $new = if ([string]::IsNullOrEmpty($cur)) { $dir } else { "$cur;$dir" }
         [Environment]::SetEnvironmentVariable('Path', $new, 'User')
-        Write-Host "    PATH-hoz adva (User): $dir  (új terminál kell hozzá)" -ForegroundColor Green
+        Write-Host "    added to user PATH: $dir  (open a new terminal)" -ForegroundColor Green
     }
 }
 function Remove-UserPath($dir) {
@@ -69,11 +68,11 @@ function Remove-UserPath($dir) {
 
 # ---- Uninstall ----------------------------------------------------------
 if ($Uninstall) {
-    Write-Step "Eltávolítás"
-    if (Test-Path $Prefix) { Remove-Item $Prefix -Recurse -Force; Write-Host "    törölve: $Prefix" }
-    if (Test-Path $ShortcutPath) { Remove-Item $ShortcutPath -Force; Write-Host "    parancsikon törölve" }
+    Write-Step "Uninstalling"
+    if (Test-Path $Prefix) { Remove-Item $Prefix -Recurse -Force; Write-Host "    removed: $Prefix" }
+    if (Test-Path $ShortcutPath) { Remove-Item $ShortcutPath -Force; Write-Host "    shortcut removed" }
     Remove-UserPath $BinDir
-    Write-Host "Kész. (A PATH-változás új terminálban érvényesül.)" -ForegroundColor Green
+    Write-Host "Done. (The PATH change takes effect in a new terminal.)" -ForegroundColor Green
     return
 }
 
@@ -82,36 +81,36 @@ $doGui = $Component -in @('gui', 'all')
 
 # ---- CLI ----------------------------------------------------------------
 if ($doCli) {
-    Write-Step "CLI fordítása (Go)"
-    Require-Tool 'go' 'Telepítsd a Go-t: https://go.dev/dl/'
+    Write-Step "Building the CLI (Go)"
+    Require-Tool 'go' 'Install Go: https://go.dev/dl/'
     New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
     Push-Location $RepoRoot
     try { & go build -o (Join-Path $BinDir 'coderev.exe') ./cmd/coderev }
     finally { Pop-Location }
-    if ($LASTEXITCODE -ne 0) { throw "go build sikertelen." }
-    Write-Host "    telepítve: $BinDir\coderev.exe" -ForegroundColor Green
+    if ($LASTEXITCODE -ne 0) { throw "go build failed." }
+    Write-Host "    installed: $BinDir\coderev.exe" -ForegroundColor Green
     if (-not $NoPath) { Add-UserPath $BinDir }
 }
 
 # ---- GUI ----------------------------------------------------------------
 if ($doGui) {
-    Write-Step "GUI publikálása (.NET, self-contained, $Rid)"
-    Require-Tool 'dotnet' 'Telepítsd a .NET SDK-t: https://dotnet.microsoft.com/download'
-    Require-Tool 'go' 'A GUI-hoz is kell a Go (a motor binárist mellécsomagoljuk).'
+    Write-Step "Publishing the GUI (.NET, self-contained, $Rid)"
+    Require-Tool 'dotnet' 'Install the .NET SDK: https://dotnet.microsoft.com/download'
+    Require-Tool 'go' 'Go is also needed for the GUI (the engine binary is bundled).'
 
     $app = Join-Path $RepoRoot 'coderev-desktop/src/CodeRev.App/CodeRev.App.csproj'
     & dotnet publish $app -c Release -r $Rid --self-contained true `
         -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
         -o $GuiDir | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "dotnet publish sikertelen." }
+    if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed." }
 
     # Bundle the engine next to the GUI so it is found without PATH setup.
-    Write-Step "Motor mellécsomagolása a GUI-hoz"
+    Write-Step "Bundling the engine with the GUI"
     Push-Location $RepoRoot
     try { & go build -o (Join-Path $GuiDir 'coderev.exe') ./cmd/coderev }
     finally { Pop-Location }
-    if ($LASTEXITCODE -ne 0) { throw "go build (GUI-hoz) sikertelen." }
-    Write-Host "    telepítve: $GuiDir\CodeRev.App.exe (+ mellékelt coderev.exe)" -ForegroundColor Green
+    if ($LASTEXITCODE -ne 0) { throw "go build (for the GUI) failed." }
+    Write-Host "    installed: $GuiDir\CodeRev.App.exe (+ bundled coderev.exe)" -ForegroundColor Green
 
     if (-not $NoShortcut) {
         $exe = Join-Path $GuiDir 'CodeRev.App.exe'
@@ -120,14 +119,14 @@ if ($doGui) {
         $lnk.TargetPath = $exe
         $lnk.WorkingDirectory = $GuiDir
         $lnk.IconLocation = "$exe,0"
-        $lnk.Description = 'coderev — AI-alapú PR review'
+        $lnk.Description = 'coderev - AI-powered PR review'
         $lnk.Save()
-        Write-Host "    Start menü parancsikon: $ShortcutPath" -ForegroundColor Green
+        Write-Host "    Start Menu shortcut: $ShortcutPath" -ForegroundColor Green
     }
 }
 
 Write-Host ""
-Write-Step "Kész"
-if ($doCli) { Write-Host "  CLI:  nyiss ÚJ terminált, majd:  coderev <branch>   (vagy: coderev --version)" }
-if ($doGui) { Write-Host "  GUI:  Start menü -> 'coderev', vagy futtasd: $GuiDir\CodeRev.App.exe" }
-Write-Host "  Eltávolítás:  ./install.ps1 -Uninstall"
+Write-Step "Done"
+if ($doCli) { Write-Host "  CLI:  open a NEW terminal, then:  coderev <branch>   (or: coderev --version)" }
+if ($doGui) { Write-Host "  GUI:  Start Menu -> 'coderev', or run: $GuiDir\CodeRev.App.exe" }
+Write-Host "  Uninstall:  ./install.ps1 -Uninstall"

@@ -35,7 +35,7 @@ public sealed class CoderevConfig
     [JsonPropertyName("agent-timeout")] public int AgentTimeout { get; set; } = 600;
     [JsonPropertyName("no-progress")] public bool NoProgress { get; set; }
     [JsonPropertyName("strict-fetch")] public bool StrictFetch { get; set; }
-    [JsonPropertyName("lang")] public string Lang { get; set; } = "hu";
+    [JsonPropertyName("lang")] public string Lang { get; set; } = "en";
 
     private static readonly JsonSerializerOptions Options = new()
     {

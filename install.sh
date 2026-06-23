@@ -19,7 +19,7 @@ case "${1:-}" in
   gui) COMPONENT="gui" ;;
   all|"") COMPONENT="all" ;;
   --uninstall) UNINSTALL=1 ;;
-  *) echo "Használat: ./install.sh [cli|gui|all|--uninstall]"; exit 1 ;;
+  *) echo "Usage: ./install.sh [cli|gui|all|--uninstall]"; exit 1 ;;
 esac
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,42 +33,42 @@ case "$(uname -s)" in
 esac
 
 if [ "$UNINSTALL" = "1" ]; then
-  echo "==> Eltávolítás"
+  echo "==> Uninstalling"
   rm -f "$BIN_DIR/coderev"
   rm -rf "$HOME/.local/share/coderev"
   rm -f "$DESKTOP_FILE"
-  echo "Kész."
+  echo "Done."
   exit 0
 fi
 
-need() { command -v "$1" >/dev/null 2>&1 || { echo "Hiányzik: $1 — $2"; exit 1; }; }
+need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing: $1 - $2"; exit 1; }; }
 
 build_engine() { # $1 = output path
-  need go "telepítsd: https://go.dev/dl/"
+  need go "install: https://go.dev/dl/"
   ( cd "$REPO_ROOT" && go build -o "$1" ./cmd/coderev )
 }
 
 if [ "$COMPONENT" = "cli" ] || [ "$COMPONENT" = "all" ]; then
-  echo "==> CLI fordítása (Go)"
+  echo "==> Building the CLI (Go)"
   mkdir -p "$BIN_DIR"
   build_engine "$BIN_DIR/coderev"
-  echo "    telepítve: $BIN_DIR/coderev"
+  echo "    installed: $BIN_DIR/coderev"
   case ":$PATH:" in
     *":$BIN_DIR:"*) ;;
-    *) echo "    FIGYELEM: $BIN_DIR nincs a PATH-on. Add hozzá a shell profilodhoz:";
-       echo "             export PATH=\"\$HOME/.local/bin:\$PATH\"" ;;
+    *) echo "    NOTE: $BIN_DIR is not on PATH. Add this to your shell profile:";
+       echo "          export PATH=\"\$HOME/.local/bin:\$PATH\"" ;;
   esac
 fi
 
 if [ "$COMPONENT" = "gui" ] || [ "$COMPONENT" = "all" ]; then
-  echo "==> GUI publikálása (.NET, self-contained, $RID)"
-  need dotnet "telepítsd: https://dotnet.microsoft.com/download"
+  echo "==> Publishing the GUI (.NET, self-contained, $RID)"
+  need dotnet "install: https://dotnet.microsoft.com/download"
   mkdir -p "$GUI_DIR"
   dotnet publish "$REPO_ROOT/coderev-desktop/src/CodeRev.App/CodeRev.App.csproj" \
     -c Release -r "$RID" --self-contained true \
     -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
     -o "$GUI_DIR" >/dev/null
-  echo "==> Motor mellécsomagolása a GUI-hoz"
+  echo "==> Bundling the engine with the GUI"
   build_engine "$GUI_DIR/coderev"
   chmod +x "$GUI_DIR/CodeRev.App" "$GUI_DIR/coderev" 2>/dev/null || true
   cp "$REPO_ROOT/coderev-desktop/src/CodeRev.App/Assets/coderev.png" "$GUI_DIR/coderev.png" 2>/dev/null || true
@@ -78,17 +78,17 @@ if [ "$COMPONENT" = "gui" ] || [ "$COMPONENT" = "all" ]; then
 [Desktop Entry]
 Type=Application
 Name=coderev
-Comment=AI-alapú PR review
+Comment=AI-powered PR review
 Exec=$GUI_DIR/CodeRev.App
 Icon=$GUI_DIR/coderev.png
 Terminal=false
 Categories=Development;
 EOF
-  echo "    telepítve: $GUI_DIR/CodeRev.App (+ mellékelt coderev), és .desktop bejegyzés"
+  echo "    installed: $GUI_DIR/CodeRev.App (+ bundled coderev), and a .desktop entry"
 fi
 
 echo ""
-echo "==> Kész"
-[ "$COMPONENT" != "gui" ] && echo "  CLI:  coderev <branch>   (nyiss új shellt, ha a PATH most változott)"
-[ "$COMPONENT" != "cli" ] && echo "  GUI:  az alkalmazás-menüből 'coderev', vagy: $GUI_DIR/CodeRev.App"
-echo "  Eltávolítás:  ./install.sh --uninstall"
+echo "==> Done"
+[ "$COMPONENT" != "gui" ] && echo "  CLI:  coderev <branch>   (open a new shell if PATH just changed)"
+[ "$COMPONENT" != "cli" ] && echo "  GUI:  from the app menu 'coderev', or run: $GUI_DIR/CodeRev.App"
+echo "  Uninstall:  ./install.sh --uninstall"

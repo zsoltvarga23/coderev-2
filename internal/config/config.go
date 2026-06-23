@@ -57,7 +57,7 @@ func Defaults() Config {
 		MaxFileBytes:    200000,
 		SnippetMaxChars: 25000,
 		AgentTimeout:    600,
-		Lang:            "hu",
+		Lang:            "en",
 		Format:          "text",
 	}
 }
