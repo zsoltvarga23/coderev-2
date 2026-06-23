@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using Avalonia.Threading;
+using CodeRev.App.Localization;
 using CodeRev.Core.Config;
 using CodeRev.Core.Engine;
 using CodeRev.Core.History;
@@ -73,10 +74,10 @@ public partial class MainWindowViewModel : ObservableObject
             foreach (var b in branches)
                 Branches.Add(b);
             ImportRepoConfig();
-            var note = CoderevConfig.Exists(path) ? "  (.coderev.json importálva)" : "";
+            var note = CoderevConfig.Exists(path) ? Loc.Instance.T("StConfigImported") : "";
             StatusText = isRepo
-                ? $"{branches.Count} helyi branch betöltve.{note}"
-                : "A kiválasztott mappa nem git repository.";
+                ? Loc.Instance.T("StBranchesLoaded", branches.Count) + note
+                : Loc.Instance.T("StNotRepo");
         });
     }
 
@@ -112,7 +113,7 @@ public partial class MainWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(StopCommand))]
     private bool _isRunning;
 
-    [ObservableProperty] private string _statusText = "Készen áll.";
+    [ObservableProperty] private string _statusText = Loc.Instance.T("StReady");
     [ObservableProperty] private string _metaText = "";
     [ObservableProperty] private string _reviewText = "";
     [ObservableProperty] private bool _hasSections;
@@ -161,7 +162,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (string.IsNullOrWhiteSpace(RepositoryPath) || string.IsNullOrWhiteSpace(Branch))
         {
-            StatusText = "Adj meg egy repo útvonalat és egy branchet.";
+            StatusText = Loc.Instance.T("StNeedRepoBranch");
             return;
         }
 
@@ -174,7 +175,7 @@ public partial class MainWindowViewModel : ObservableObject
         HasSections = false;
         ReviewText = MetaText = "";
         IsRunning = true;
-        StatusText = "Fut…";
+        StatusText = Loc.Instance.T("StRunning");
         _cts = new CancellationTokenSource();
 
         var options = new RunOptions
@@ -194,15 +195,15 @@ public partial class MainWindowViewModel : ObservableObject
                 var captured = ev;
                 await Dispatcher.UIThread.InvokeAsync(() => Handle(captured));
             }
-            StatusText = "Kész.";
+            StatusText = Loc.Instance.T("StDone");
         }
         catch (OperationCanceledException)
         {
-            StatusText = "Megszakítva.";
+            StatusText = Loc.Instance.T("StCancelled");
         }
         catch (Exception ex)
         {
-            StatusText = "Hiba: " + ex.Message;
+            StatusText = Loc.Instance.T("StError", ex.Message);
         }
         finally
         {
@@ -226,7 +227,7 @@ public partial class MainWindowViewModel : ObservableObject
         switch (ev.Type)
         {
             case EventType.RunStart:
-                StatusText = $"Review: {ev.Branch}  (base: {ev.Base})";
+                StatusText = Loc.Instance.T("StReviewOf", ev.Branch ?? "", ev.Base ?? "");
                 break;
 
             case EventType.StepStart:
@@ -253,7 +254,7 @@ public partial class MainWindowViewModel : ObservableObject
 
             case EventType.Meta:
                 _changedCount = ev.ChangedFiles?.Count ?? 0;
-                MetaText = $"{_changedCount} fájl · {ev.Hunks ?? 0} hunk · prompt ~{ev.PromptBytes ?? 0} B";
+                MetaText = Loc.Instance.T("MetaFormat", _changedCount, ev.Hunks ?? 0, ev.PromptBytes ?? 0);
                 break;
 
             case EventType.Diff:
@@ -282,8 +283,8 @@ public partial class MainWindowViewModel : ObservableObject
 
             case EventType.Summary:
                 StatusText = ev.OutPath is { Length: > 0 }
-                    ? $"Kész — kiírva: {ev.OutPath}  ({ev.TotalMs} ms)"
-                    : $"Kész  ({ev.TotalMs} ms)";
+                    ? Loc.Instance.T("StSummaryOut", ev.OutPath, ev.TotalMs ?? 0)
+                    : Loc.Instance.T("StSummary", ev.TotalMs ?? 0);
                 break;
 
             case EventType.Done:
@@ -333,7 +334,7 @@ public partial class MainWindowViewModel : ObservableObject
         SelectedDiffFile = null;
         RefreshVisibleDiff();
 
-        StatusText = $"Előzmény betöltve: {e.Label}";
+        StatusText = Loc.Instance.T("StHistoryLoaded", e.Label);
     }
 
     /// <summary>Rebuilds the visible diff lines for the selected file (or all

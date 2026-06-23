@@ -1,15 +1,16 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CodeRev.App.ViewModels"
+        xmlns:loc="using:CodeRev.App.Localization"
         x:Class="CodeRev.App.Views.ConfigEditorWindow"
         x:DataType="vm:ConfigEditorViewModel"
         Width="560" Height="640"
         WindowStartupLocation="CenterOwner"
         Icon="/Assets/coderev.png"
-        Title=".coderev.json szerkesztő">
+        Title=".coderev.json">
 
   <DockPanel Margin="14">
-    <TextBlock DockPanel.Dock="Top" Text=".coderev.json beállítások" FontWeight="Bold" FontSize="16" Margin="0,0,0,4"/>
+    <TextBlock DockPanel.Dock="Top" Text="{loc:Tr CfgHeader}" FontWeight="Bold" FontSize="16" Margin="0,0,0,4"/>
     <TextBlock DockPanel.Dock="Top" Text="{Binding RepoPath}" Foreground="Gray" FontSize="11" Margin="0,0,0,10"/>
 
     <!-- Buttons + status pinned to the bottom -->
@@ -17,8 +18,8 @@
       <StackPanel Spacing="6">
         <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" Foreground="Gray"/>
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-          <Button Content="Újratöltés" Command="{Binding ReloadCommand}"/>
-          <Button Content="💾 Mentés" Command="{Binding SaveCommand}"/>
+          <Button Content="{loc:Tr CfgReload}" Command="{Binding ReloadCommand}"/>
+          <Button Content="{loc:Tr CfgSave}" Command="{Binding SaveCommand}"/>
         </StackPanel>
       </StackPanel>
     </Border>
@@ -27,26 +28,26 @@
       <StackPanel Spacing="10">
 
         <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" >
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Base ref" VerticalAlignment="Center" Margin="0,4"/>
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Tr CfgBaseRef}" VerticalAlignment="Center" Margin="0,4"/>
           <TextBox    Grid.Row="0" Grid.Column="1" Text="{Binding BaseRef}" Margin="0,4"/>
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Head ref" VerticalAlignment="Center" Margin="0,4"/>
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Tr CfgHeadRef}" VerticalAlignment="Center" Margin="0,4"/>
           <TextBox    Grid.Row="1" Grid.Column="1" Text="{Binding HeadRef}" Margin="0,4"/>
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="Nyelv" VerticalAlignment="Center" Margin="0,4"/>
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Tr CfgLang}" VerticalAlignment="Center" Margin="0,4"/>
           <ComboBox   Grid.Row="2" Grid.Column="1" ItemsSource="{Binding LangOptions}" SelectedItem="{Binding Lang}" Width="120" HorizontalAlignment="Left" Margin="0,4"/>
-          <TextBlock Grid.Row="3" Grid.Column="0" Text="Kimeneti fájl (out)" VerticalAlignment="Center" Margin="0,4"/>
-          <TextBox    Grid.Row="3" Grid.Column="1" Watermark="pl. review.md (üres = csak konzol)" Text="{Binding Out}" Margin="0,4"/>
+          <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Tr CfgOut}" VerticalAlignment="Center" Margin="0,4"/>
+          <TextBox    Grid.Row="3" Grid.Column="1" Watermark="{loc:Tr CfgOutWatermark}" Text="{Binding Out}" Margin="0,4"/>
         </Grid>
 
         <!-- Agent manager -->
         <Border BorderBrush="#22808080" BorderThickness="1" CornerRadius="6" Padding="10">
           <StackPanel Spacing="8">
-            <TextBlock Text="Agent" FontWeight="Bold"/>
+            <TextBlock Text="{loc:Tr CfgAgent}" FontWeight="Bold"/>
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <TextBlock Text="Beépített:" VerticalAlignment="Center"/>
+              <TextBlock Text="{loc:Tr CfgBuiltin}" VerticalAlignment="Center"/>
               <ComboBox ItemsSource="{Binding AgentOptions}" SelectedItem="{Binding Agent}" Width="130"/>
             </StackPanel>
-            <CheckBox Content="Egyedi agent használata (felülírja a beépítettet)" IsChecked="{Binding UseCustomAgent}"/>
-            <TextBlock Text="Egyedi agent (JSON): pl. {&quot;name&quot;:&quot;mycli&quot;,&quot;cmd&quot;:[&quot;mycli&quot;,&quot;--in&quot;,&quot;{prompt_file}&quot;],&quot;mode&quot;:&quot;file&quot;}"
+            <CheckBox Content="{loc:Tr CfgUseCustom}" IsChecked="{Binding UseCustomAgent}"/>
+            <TextBlock Text="{loc:Tr CfgCustomHint}"
                        Foreground="Gray" FontSize="11" TextWrapping="Wrap"
                        IsVisible="{Binding UseCustomAgent}"/>
             <TextBox AcceptsReturn="True" Height="90" FontFamily="Cascadia Code,Consolas,monospace"
@@ -54,23 +55,23 @@
           </StackPanel>
         </Border>
 
-        <CheckBox Content="A módosult fájlok teljes tartalmát is beteszi (include-full-files)" IsChecked="{Binding IncludeFullFiles}"/>
-        <CheckBox Content="A fetch hibája végzetes (strict-fetch)" IsChecked="{Binding StrictFetch}"/>
-        <CheckBox Content="Spinner kikapcsolása (no-progress)" IsChecked="{Binding NoProgress}"/>
+        <CheckBox Content="{loc:Tr CfgIncludeFull}" IsChecked="{Binding IncludeFullFiles}"/>
+        <CheckBox Content="{loc:Tr CfgStrictFetch}" IsChecked="{Binding StrictFetch}"/>
+        <CheckBox Content="{loc:Tr CfgNoProgress}" IsChecked="{Binding NoProgress}"/>
 
         <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto">
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Kontextus sorok" VerticalAlignment="Center" Margin="0,4"/>
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Tr CfgContextLines}" VerticalAlignment="Center" Margin="0,4"/>
           <NumericUpDown Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="500" Increment="1"
                          Value="{Binding ContextLines}" Width="140" HorizontalAlignment="Left" Margin="0,4"/>
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Agent timeout (mp)" VerticalAlignment="Center" Margin="0,4"/>
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Tr CfgAgentTimeout}" VerticalAlignment="Center" Margin="0,4"/>
           <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="100000" Increment="30"
                          Value="{Binding AgentTimeout}" Width="140" HorizontalAlignment="Left" Margin="0,4"/>
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="Sablon (template)" VerticalAlignment="Center" Margin="0,4"/>
-          <TextBox    Grid.Row="2" Grid.Column="1" Watermark="pl. review_template.md" Text="{Binding Template}" Margin="0,4"/>
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Tr CfgTemplate}" VerticalAlignment="Center" Margin="0,4"/>
+          <TextBox    Grid.Row="2" Grid.Column="1" Watermark="{loc:Tr CfgTemplateWatermark}" Text="{Binding Template}" Margin="0,4"/>
         </Grid>
 
         <StackPanel Spacing="4">
-          <TextBlock Text="Betartandó dokumentumok (obey-doc) — soronként egy" FontWeight="Bold"/>
+          <TextBlock Text="{loc:Tr CfgObeyDoc}" FontWeight="Bold"/>
           <TextBox AcceptsReturn="True" Height="70" Watermark="CONTRIBUTING.md&#10;docs/style.md"
                    Text="{Binding ObeyDocText}"/>
         </StackPanel>

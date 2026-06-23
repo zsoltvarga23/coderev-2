@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using CodeRev.App.Localization;
 using CodeRev.App.ViewModels;
 using CodeRev.Core.Export;
 
@@ -14,6 +15,9 @@ namespace CodeRev.App.Views;
 public partial class MainWindow : Window
 {
     public MainWindow() => InitializeComponent();
+
+    /// <summary>Switches the UI language (English &lt;-&gt; Hungarian) live.</summary>
+    private void OnToggleLanguage(object? sender, RoutedEventArgs e) => Loc.Instance.Toggle();
 
     /// <summary>Opens the About window (app description and AI usage).</summary>
     private async void OnOpenAbout(object? sender, RoutedEventArgs e)
@@ -67,7 +71,7 @@ public partial class MainWindow : Window
         var entry = vm.BuildCurrentEntry();
         if (string.IsNullOrWhiteSpace(entry.ReviewMarkdown) && string.IsNullOrWhiteSpace(entry.DiffUnified))
         {
-            vm.StatusText = "Nincs mit exportálni — előbb futtass egy review-t.";
+            vm.StatusText = Loc.Instance.T("StNothingExport");
             return;
         }
 
@@ -87,7 +91,7 @@ public partial class MainWindow : Window
         await using var stream = await file.OpenWriteAsync();
         await using var writer = new StreamWriter(stream);
         await writer.WriteAsync(content);
-        vm.StatusText = $"Exportálva: {file.Name}";
+        vm.StatusText = Loc.Instance.T("StExported", file.Name);
     }
 
     /// <summary>Toggles the application between light and dark themes.</summary>

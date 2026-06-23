@@ -4,6 +4,7 @@
         xmlns:m="using:CodeRev.Core.Models"
         xmlns:hist="using:CodeRev.Core.History"
         xmlns:conv="using:CodeRev.App.Converters"
+        xmlns:loc="using:CodeRev.App.Localization"
         x:Class="CodeRev.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Width="1040" Height="700"
@@ -24,13 +25,13 @@
             CornerRadius="6">
       <StackPanel Spacing="8">
         <Grid ColumnDefinitions="Auto,*,Auto,Auto" RowDefinitions="Auto,Auto">
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Repo:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Tr RepoLabel}" VerticalAlignment="Center" Margin="0,0,8,4"/>
           <DockPanel Grid.Row="0" Grid.Column="1" Margin="0,0,8,4">
             <Button DockPanel.Dock="Right" Content="📂" Click="OnBrowseRepo" Margin="6,0,0,0"
-                    ToolTip.Tip="Mappa / repository tallózása"/>
-            <TextBox Watermark="git repo útvonala" Text="{Binding RepositoryPath}"/>
+                    ToolTip.Tip="{loc:Tr BrowseTip}"/>
+            <TextBox Watermark="{loc:Tr RepoWatermark}" Text="{Binding RepositoryPath}"/>
           </DockPanel>
-          <TextBlock Grid.Row="0" Grid.Column="2" Text="Branch:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+          <TextBlock Grid.Row="0" Grid.Column="2" Text="{loc:Tr BranchLabel}" VerticalAlignment="Center" Margin="0,0,8,4"/>
           <AutoCompleteBox Grid.Row="0" Grid.Column="3" Width="200" Watermark="feature/x"
                            Text="{Binding Branch}" ItemsSource="{Binding Branches}"
                            FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
@@ -38,29 +39,30 @@
 
           <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
                       Orientation="Horizontal" Spacing="8">
-            <TextBlock Text="Base:" VerticalAlignment="Center"/>
+            <TextBlock Text="{loc:Tr BaseLabel}" VerticalAlignment="Center"/>
             <TextBox Width="160" Text="{Binding BaseRef}" Watermark="origin/main"/>
-            <TextBlock Text="Agent:" VerticalAlignment="Center"/>
+            <TextBlock Text="{loc:Tr AgentLabel}" VerticalAlignment="Center"/>
             <ComboBox ItemsSource="{Binding AgentOptions}" SelectedItem="{Binding Agent}" Width="120"
                       PlaceholderText="claude"/>
-            <TextBlock Text="Nyelv:" VerticalAlignment="Center"/>
+            <TextBlock Text="{loc:Tr ReviewLangLabel}" VerticalAlignment="Center"/>
             <ComboBox ItemsSource="{Binding LangOptions}" SelectedItem="{Binding Lang}" Width="110"
                       PlaceholderText="en"/>
-            <CheckBox Content="Dry-run" IsChecked="{Binding DryRun}"/>
+            <CheckBox Content="{loc:Tr DryRun}" IsChecked="{Binding DryRun}"/>
           </StackPanel>
         </Grid>
 
         <DockPanel>
           <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
-            <Button Content="ℹ Infó" Click="OnOpenAbout" ToolTip.Tip="Az alkalmazásról és az AI-használatról"/>
-            <Button Content="⚙ Beállítások" Click="OnOpenConfigEditor"/>
-            <Button Content="⤓ .md" Click="OnExportMarkdown" ToolTip.Tip="Review exportálása Markdownba"/>
-            <Button Content="⤓ .html" Click="OnExportHtml" ToolTip.Tip="Review exportálása HTML-be"/>
-            <Button Content="🌓 Téma" Click="OnToggleTheme"/>
+            <Button Content="{loc:Tr InfoBtn}" Click="OnOpenAbout"/>
+            <Button Content="{loc:Tr SettingsBtn}" Click="OnOpenConfigEditor"/>
+            <Button Content="⤓ .md" Click="OnExportMarkdown" ToolTip.Tip="{loc:Tr ExportMdTip}"/>
+            <Button Content="⤓ .html" Click="OnExportHtml" ToolTip.Tip="{loc:Tr ExportHtmlTip}"/>
+            <Button Content="{loc:Tr ThemeBtn}" Click="OnToggleTheme"/>
+            <Button Content="{loc:Tr UiLangToggle}" Click="OnToggleLanguage"/>
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Content="▶ Review indítása" Command="{Binding RunCommand}"/>
-            <Button Content="■ Stop" Command="{Binding StopCommand}"/>
+            <Button Content="{loc:Tr RunBtn}" Command="{Binding RunCommand}"/>
+            <Button Content="{loc:Tr StopBtn}" Command="{Binding StopCommand}"/>
           </StackPanel>
         </DockPanel>
       </StackPanel>
@@ -72,7 +74,7 @@
               Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
               CornerRadius="6">
         <DockPanel>
-          <TextBlock DockPanel.Dock="Top" Text="Lépések" FontWeight="Bold" Margin="2,0,0,8"/>
+          <TextBlock DockPanel.Dock="Top" Text="{loc:Tr StepsHeader}" FontWeight="Bold" Margin="2,0,0,8"/>
           <TextBlock DockPanel.Dock="Bottom" Text="{Binding MetaText}"
                      TextWrapping="Wrap" Foreground="Gray" Margin="2,8,0,0"/>
           <ItemsControl ItemsSource="{Binding Steps}">
@@ -94,7 +96,7 @@
 
       <TabControl Grid.Column="1">
         <!-- Review: color-coded, sectioned cards (falls back to raw stream) -->
-        <TabItem Header="Review">
+        <TabItem Header="{loc:Tr TabReview}">
           <ScrollViewer>
             <StackPanel Margin="6">
               <ItemsControl ItemsSource="{Binding ReviewSections}" IsVisible="{Binding HasSections}">
@@ -119,10 +121,10 @@
         </TabItem>
 
         <!-- Diff: file sidebar + colored, line-numbered rows -->
-        <TabItem Header="Diff">
+        <TabItem Header="{loc:Tr TabDiff}">
           <Grid ColumnDefinitions="210,*">
             <DockPanel Grid.Column="0" Margin="0,0,8,0">
-              <Button DockPanel.Dock="Top" Content="◂ Mind" Command="{Binding ShowAllFilesCommand}"
+              <Button DockPanel.Dock="Top" Content="{loc:Tr ShowAllFiles}" Command="{Binding ShowAllFilesCommand}"
                       HorizontalAlignment="Stretch" Margin="0,0,0,6"/>
               <ListBox ItemsSource="{Binding DiffFiles}" SelectedItem="{Binding SelectedDiffFile}">
                 <ListBox.ItemTemplate>
@@ -156,10 +158,10 @@
           </Grid>
         </TabItem>
 
-        <TabItem Header="Előzmények">
+        <TabItem Header="{loc:Tr TabHistory}">
           <DockPanel Margin="6">
             <TextBlock DockPanel.Dock="Top" Foreground="Gray" FontSize="11" Margin="0,0,0,6"
-                       Text="Korábbi futások (kattints a visszatöltéshez)"/>
+                       Text="{loc:Tr HistoryHint}"/>
             <ListBox ItemsSource="{Binding History}" SelectedItem="{Binding SelectedHistoryEntry}">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="hist:ReviewHistoryEntry">
@@ -168,7 +170,7 @@
                     <TextBlock FontSize="11" Foreground="Gray">
                       <Run Text="base:"/><Run Text="{Binding Base}"/>
                       <Run Text="  ·  agent:"/><Run Text="{Binding Agent}"/>
-                      <Run Text="  ·  "/><Run Text="{Binding ChangedFiles}"/><Run Text=" fájl"/>
+                      <Run Text="  ·  📄 "/><Run Text="{Binding ChangedFiles}"/>
                     </TextBlock>
                   </StackPanel>
                 </DataTemplate>
@@ -177,7 +179,7 @@
           </DockPanel>
         </TabItem>
 
-        <TabItem Header="Napló">
+        <TabItem Header="{loc:Tr TabLog}">
           <ScrollViewer>
             <ItemsControl ItemsSource="{Binding Log}" Margin="6"/>
           </ScrollViewer>

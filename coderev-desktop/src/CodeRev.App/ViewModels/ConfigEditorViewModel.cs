@@ -1,3 +1,4 @@
+using CodeRev.App.Localization;
 using CodeRev.Core.Config;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -68,12 +69,11 @@ public partial class ConfigEditorViewModel : ObservableObject
         UseCustomAgent = !string.IsNullOrWhiteSpace(_config.AgentConfig);
 
         if (!CanSave)
-            StatusText = "Nincs megnyitott mappa/repository — a mentés nem elérhető. " +
-                         "Nyiss meg egyet a főablakban (📂).";
+            StatusText = Loc.Instance.T("CfgStNoRepo");
         else if (CoderevConfig.Exists(_repoPath))
-            StatusText = $"Betöltve: {CoderevConfig.PathFor(_repoPath)}";
+            StatusText = Loc.Instance.T("CfgStLoaded", CoderevConfig.PathFor(_repoPath));
         else
-            StatusText = "Nincs még .coderev.json — alapértelmezett értékek.";
+            StatusText = Loc.Instance.T("CfgStDefaults");
     }
 
     [RelayCommand]
@@ -84,12 +84,12 @@ public partial class ConfigEditorViewModel : ObservableObject
     {
         if (Lang is not ("hu" or "en"))
         {
-            StatusText = "A nyelv csak hu vagy en lehet.";
+            StatusText = Loc.Instance.T("CfgStInvalidLang");
             return;
         }
         if (UseCustomAgent && !string.IsNullOrWhiteSpace(AgentConfigText) && !IsValidJson(AgentConfigText))
         {
-            StatusText = "Az egyedi agent nem érvényes JSON.";
+            StatusText = Loc.Instance.T("CfgStInvalidJson");
             return;
         }
 
@@ -114,11 +114,11 @@ public partial class ConfigEditorViewModel : ObservableObject
         try
         {
             var path = _config.Save(_repoPath);
-            StatusText = $"Mentve: {path}";
+            StatusText = Loc.Instance.T("CfgStSaved", path);
         }
         catch (Exception ex)
         {
-            StatusText = "Hiba a mentéskor: " + ex.Message;
+            StatusText = Loc.Instance.T("CfgStSaveError", ex.Message);
         }
     }
 
