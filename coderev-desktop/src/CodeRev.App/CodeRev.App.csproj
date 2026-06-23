@@ -11,6 +11,8 @@
     <!-- Cross-platform self-contained publishing targets. -->
     <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
     <Version>1.0.0</Version>
+    <!-- Embeds the icon into the Windows .exe (and thus the Start Menu shortcut). -->
+    <ApplicationIcon>Assets\coderev.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

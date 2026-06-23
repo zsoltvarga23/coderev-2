@@ -9,6 +9,15 @@ A `coderev-legacy/` Python eszköz Go nyelvű újraírása, a
 
 ## Telepítés / build
 
+Egyszerű, per-user telepítő (CLI, GUI vagy mindkettő) — lásd [INSTALL.md](INSTALL.md):
+
+```powershell
+./install.ps1            # Windows: CLI + GUI
+./install.sh             # Linux/macOS
+```
+
+Vagy csak a CLI kézi fordítása:
+
 ```bash
 go build -o coderev ./cmd/coderev      # vagy coderev.exe Windowson
 ```
