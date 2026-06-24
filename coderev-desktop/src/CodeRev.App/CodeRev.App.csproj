@@ -31,6 +31,10 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <!-- Override the vulnerable transitive Tmds.DBus.Protocol 0.20.0 (pulled by
+         the Avalonia Linux backend) with the patched 0.21.3 — advisory
+         GHSA-xrw6-gwf8-vvr9. 0.21.x is API-close to 0.20.x, so Avalonia is unaffected. -->
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
 
   <ItemGroup>
