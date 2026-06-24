@@ -42,11 +42,9 @@
             <TextBlock Text="{loc:Tr BaseLabel}" VerticalAlignment="Center"/>
             <TextBox Width="160" Text="{Binding BaseRef}" Watermark="origin/main"/>
             <TextBlock Text="{loc:Tr AgentLabel}" VerticalAlignment="Center"/>
-            <ComboBox ItemsSource="{Binding AgentOptions}" SelectedItem="{Binding Agent}" Width="120"
-                      PlaceholderText="claude"/>
+            <ComboBox ItemsSource="{Binding AgentOptions}" SelectedItem="{Binding Agent}" Width="150"/>
             <TextBlock Text="{loc:Tr ReviewLangLabel}" VerticalAlignment="Center"/>
-            <ComboBox ItemsSource="{Binding LangOptions}" SelectedItem="{Binding Lang}" Width="110"
-                      PlaceholderText="en"/>
+            <ComboBox ItemsSource="{Binding LangOptions}" SelectedItem="{Binding Lang}" Width="150"/>
             <CheckBox Content="{loc:Tr DryRun}" IsChecked="{Binding DryRun}"/>
           </StackPanel>
         </Grid>

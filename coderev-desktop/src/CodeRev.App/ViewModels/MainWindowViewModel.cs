@@ -81,31 +81,26 @@ public partial class MainWindowViewModel : ObservableObject
         });
     }
 
-    /// <summary>Loads base/agent/lang from the repo's .coderev.json into the
-    /// form so the UI reflects the real config. If there is no config file the
-    /// fields are cleared, leaving placeholders and letting the engine decide.</summary>
+    /// <summary>Reflects the repo's .coderev.json base ref in the form. Agent and
+    /// review language are deliberately NOT pre-selected: a selected value is
+    /// forwarded as --agent/--lang and would override the repo's .coderev.json.
+    /// They stay as placeholders (nothing selected) unless the user picks one.</summary>
     public void ImportRepoConfig()
     {
-        if (!string.IsNullOrWhiteSpace(RepositoryPath) && CoderevConfig.Exists(RepositoryPath))
-        {
-            var cfg = CoderevConfig.Load(RepositoryPath);
-            BaseRef = cfg.BaseRef;
-            Agent = cfg.Agent;
-            Lang = cfg.Lang;
-        }
-        else
-        {
-            BaseRef = "";
-            Agent = "";
-            Lang = "";
-        }
+        // Reset the selectors to the "use .coderev.json" placeholder so the
+        // repo's own config applies; the user can still override per run.
+        Agent = UseConfig;
+        Lang = UseConfig;
+        BaseRef = !string.IsNullOrWhiteSpace(RepositoryPath) && CoderevConfig.Exists(RepositoryPath)
+            ? CoderevConfig.Load(RepositoryPath).BaseRef
+            : "";
     }
     // Empty by default so the GUI does NOT override the repo's .coderev.json.
     // When a repo with a config is opened these are filled from it; otherwise
     // they stay blank (placeholder) and the engine resolves them itself.
     [ObservableProperty] private string _baseRef = "";
-    [ObservableProperty] private string _agent = "";
-    [ObservableProperty] private string _lang = "";
+    [ObservableProperty] private string _agent = UseConfig;
+    [ObservableProperty] private string _lang = UseConfig;
     [ObservableProperty] private bool _dryRun;
 
     [ObservableProperty]
@@ -141,9 +136,16 @@ public partial class MainWindowViewModel : ObservableObject
 
     partial void OnSelectedDiffFileChanged(DiffFile? value) => RefreshVisibleDiff();
 
-    /// <summary>Selectable agents and languages for the setup combo boxes.</summary>
-    public string[] AgentOptions { get; } = { "codex", "copilot", "claude" };
-    public string[] LangOptions { get; } = { "hu", "en" };
+    /// <summary>Sentinel combo item meaning "keep the repo's .coderev.json value"
+    /// (or, if there is no config, the user must pick a real value).</summary>
+    public const string UseConfig = "(.coderev.json)";
+
+    /// <summary>Selectable agents and languages for the setup combo boxes; the
+    /// first item is the "use .coderev.json" placeholder.</summary>
+    public string[] AgentOptions { get; } = { UseConfig, "codex", "copilot", "claude" };
+    public string[] LangOptions { get; } = { UseConfig, "hu", "en" };
+
+    private static bool IsPlaceholder(string? v) => string.IsNullOrEmpty(v) || v == UseConfig;
 
     /// <summary>App version (from the assembly), shown in the status bar.</summary>
     public string AppVersion { get; } = ReadVersion();
@@ -166,6 +168,16 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        // Placeholder = use .coderev.json (don't forward the flag). With no
+        // config there is nothing to fall back to, so require explicit choices.
+        var agentSel = IsPlaceholder(Agent) ? null : Agent;
+        var langSel = IsPlaceholder(Lang) ? null : Lang;
+        if (!CoderevConfig.Exists(RepositoryPath) && (agentSel is null || langSel is null))
+        {
+            StatusText = Loc.Instance.T("StSelectAgentLang");
+            return;
+        }
+
         Steps.Clear();
         Log.Clear();
         _stepById.Clear();
@@ -183,8 +195,8 @@ public partial class MainWindowViewModel : ObservableObject
             Branch = Branch,
             RepositoryPath = RepositoryPath,
             BaseRef = BaseRef,
-            Agent = Agent,
-            Lang = Lang,
+            Agent = agentSel,
+            Lang = langSel,
             DryRun = DryRun,
         };
 
@@ -297,7 +309,10 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Builds a history entry from the current review state (used for
     /// both saving to history and exporting).</summary>
     public ReviewHistoryEntry BuildCurrentEntry() =>
-        ReviewHistoryEntry.Create(Branch, BaseRef, Agent, Lang, _changedCount, ReviewText, _lastDiffUnified);
+        ReviewHistoryEntry.Create(Branch, BaseRef,
+            IsPlaceholder(Agent) ? "" : Agent,
+            IsPlaceholder(Lang) ? "" : Lang,
+            _changedCount, ReviewText, _lastDiffUnified);
 
     private void SaveToHistory()
     {
