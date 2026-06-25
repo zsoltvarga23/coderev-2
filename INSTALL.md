@@ -30,6 +30,9 @@ A GUI a **Velopack** keretrendszerrel készül: a `⬆ Frissítés` gombbal bár
 ellenőrzi és egy lépésben telepíti az újabb verziót, majd újraindul. A `coderev`
 motor a csomag **része**, külön nem kell telepíteni.
 
+> **macOS:** GUI-csomag jelenleg **nem** készül; a **CLI** viszont elérhető
+> macre is (lásd lent), és a `coderev update`-tel frissül.
+
 ### CLI (parancssori eszköz)
 
 **A leggyorsabb** — letöltő szkript (nem fordít, csak letölti és PATH-ra teszi a

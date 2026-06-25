@@ -26,7 +26,17 @@ import (
 // the CODEREV_UPDATE_REPO environment variable (e.g. for a fork or mirror).
 const DefaultRepo = "zsoltvarga23/coderev-2"
 
-const apiBase = "https://api.github.com"
+// apiBase is the GitHub REST API root. A var (not const) so tests can point it
+// at a local httptest server.
+var apiBase = "https://api.github.com"
+
+// Download caps: defense against a compromised/misconfigured source serving an
+// arbitrarily large body. The binary is fetched before its checksum is verified,
+// so an unbounded read could exhaust memory before the integrity check runs.
+const (
+	maxBinaryBytes = 256 << 20 // 256 MB — generous ceiling for a CLI binary
+	maxMetaBytes   = 4 << 20   // 4 MB — checksums/JSON are tiny
+)
 
 // Options configures an update run.
 type Options struct {
@@ -117,7 +127,7 @@ func Run(opts Options) error {
 	sums := findAsset(rel.Assets, "checksums.txt")
 
 	fmt.Fprintf(out, "Downloading %s (%s)…\n", bin.Name, humanBytes(bin.Size))
-	data, err := download(client, bin.URL)
+	data, err := download(client, bin.URL, maxBinaryBytes)
 	if err != nil {
 		return fmt.Errorf("downloading %s: %w", bin.Name, err)
 	}
@@ -127,7 +137,7 @@ func Run(opts Options) error {
 	if sums == nil {
 		return fmt.Errorf("release v%s has no checksums.txt — refusing to install an unverified binary", latest)
 	}
-	sumData, err := download(client, sums.URL)
+	sumData, err := download(client, sums.URL, maxMetaBytes)
 	if err != nil {
 		return fmt.Errorf("downloading checksums.txt: %w", err)
 	}
@@ -157,6 +167,7 @@ func latestRelease(client *http.Client, repo string) (*release, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	// Authorize if a token is present (raises rate limits / private repos).
 	if tok := os.Getenv("GITHUB_TOKEN"); tok != "" {
 		req.Header.Set("Authorization", "Bearer "+tok)
@@ -180,7 +191,9 @@ func latestRelease(client *http.Client, repo string) (*release, error) {
 	return &rel, nil
 }
 
-func download(client *http.Client, url string) ([]byte, error) {
+// download fetches url, reading at most limit bytes (guards against an
+// oversized body from a compromised or misconfigured source).
+func download(client *http.Client, url string, limit int64) ([]byte, error) {
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
@@ -189,7 +202,7 @@ func download(client *http.Client, url string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP %s", resp.Status)
 	}
-	return io.ReadAll(resp.Body)
+	return io.ReadAll(io.LimitReader(resp.Body, limit))
 }
 
 func findAsset(assets []asset, name string) *asset {
@@ -201,9 +214,7 @@ func findAsset(assets []asset, name string) *asset {
 	return nil
 }
 
-// replaceExecutable atomically swaps the running binary for newData. It writes
-// the new bytes next to the current executable (same volume, so os.Rename is
-// atomic), moves the old binary aside, then renames the new one into place.
+// replaceExecutable atomically swaps the running binary for newData.
 func replaceExecutable(newData []byte) error {
 	exe, err := os.Executable()
 	if err != nil {
@@ -212,27 +223,35 @@ func replaceExecutable(newData []byte) error {
 	if resolved, err := filepath.EvalSymlinks(exe); err == nil {
 		exe = resolved
 	}
-	dir := filepath.Dir(exe)
+	return replaceFile(exe, newData)
+}
 
-	newPath := exe + ".new"
+// replaceFile writes newData over target via a same-directory swap: it writes a
+// ".new" sibling (same volume, so os.Rename is atomic), moves the current file
+// aside to ".old", then renames the new file into place. Kept separate from
+// replaceExecutable so it can be tested without touching the running binary.
+func replaceFile(target string, newData []byte) error {
+	dir := filepath.Dir(target)
+
+	newPath := target + ".new"
 	if err := os.WriteFile(newPath, newData, 0o755); err != nil {
 		return fmt.Errorf("writing to %s (is the install directory writable?): %w", dir, err)
 	}
 
-	oldPath := exe + ".old"
+	oldPath := target + ".old"
 	_ = os.Remove(oldPath) // clear any stale leftover from a previous update
 
 	// A running executable cannot be deleted on Windows, but it CAN be renamed;
 	// move it aside so the new binary can take its place.
-	if err := os.Rename(exe, oldPath); err != nil {
+	if err := os.Rename(target, oldPath); err != nil {
 		_ = os.Remove(newPath)
 		return err
 	}
-	if err := os.Rename(newPath, exe); err != nil {
-		_ = os.Rename(oldPath, exe) // roll back
+	if err := os.Rename(newPath, target); err != nil {
+		_ = os.Rename(oldPath, target) // roll back
 		return err
 	}
-	_ = os.Chmod(exe, 0o755)
+	_ = os.Chmod(target, 0o755)
 	// Best-effort cleanup. On Windows the .old file is still locked until this
 	// process exits; it's harmless and overwritten on the next update.
 	_ = os.Remove(oldPath)
@@ -291,7 +310,7 @@ func numAt(parts []string, i int) (int, error) {
 func checksumFor(contents, filename string) (string, bool) {
 	for _, line := range strings.Split(contents, "\n") {
 		line = strings.TrimSpace(line)
-		if line == "" {
+		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 		fields := strings.Fields(line)

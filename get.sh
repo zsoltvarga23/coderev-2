@@ -44,8 +44,14 @@ fi
 echo "==> Resolving release ($VERSION)"
 json="$(curl -fsSL "${auth[@]}" -H 'Accept: application/vnd.github+json' "$API")"
 
-# Minimal JSON scraping (no jq dependency): pull the download URLs by asset name.
-url_for() { echo "$json" | grep -o "https://[^\"]*/$1" | head -n1; }
+# Prefer jq (robust); fall back to URL scraping when it is unavailable. The
+# fallback assumes the GitHub download URL ends in the exact asset name — true
+# for the current Releases API; if that ever changes, install jq.
+if command -v jq >/dev/null 2>&1; then
+  url_for() { printf '%s' "$json" | jq -r --arg n "$1" '.assets[] | select(.name==$n) | .browser_download_url' | head -n1; }
+else
+  url_for() { printf '%s' "$json" | grep -o "https://[^\"]*/$1" | head -n1; }
+fi
 BIN_URL="$(url_for "$ASSET")"
 SUM_URL="$(url_for "checksums.txt")"
 [ -n "$BIN_URL" ] || { echo "Release has no asset '$ASSET'."; exit 1; }

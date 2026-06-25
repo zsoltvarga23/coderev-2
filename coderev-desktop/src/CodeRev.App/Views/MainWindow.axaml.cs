@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -142,12 +143,32 @@ public partial class MainWindow : Window
             if (!confirmed)
                 return;
 
-            // Progress arrives off the UI thread; marshal back before touching VM.
-            await svc.DownloadAsync(update, p =>
-                Dispatcher.UIThread.Post(() => vm.StatusText = Loc.Instance.T("StUpdDownloading", p)));
+            // Cancel the download if the window is closed mid-flight, so the
+            // progress callback never fires against a torn-down VM.
+            using var cts = new CancellationTokenSource();
+            void cancelOnClose(object? s, EventArgs ev) => cts.Cancel();
+            Closed += cancelOnClose;
+            try
+            {
+                // Progress arrives off the UI thread; marshal back before touching VM.
+                await svc.DownloadAsync(update, p =>
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (!cts.IsCancellationRequested)
+                            vm.StatusText = Loc.Instance.T("StUpdDownloading", p);
+                    }), cts.Token);
+            }
+            finally
+            {
+                Closed -= cancelOnClose;
+            }
 
             vm.StatusText = Loc.Instance.T("StUpdRestarting");
             svc.ApplyAndRestart(update); // exits this process and relaunches
+        }
+        catch (OperationCanceledException)
+        {
+            // Window closed during download — nothing to report.
         }
         catch (Exception ex)
         {
@@ -170,6 +191,7 @@ public partial class MainWindow : Window
             Width = 440,
             SizeToContent = SizeToContent.Height,
             CanResize = false,
+            ShowInTaskbar = false,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             Content = new StackPanel
             {

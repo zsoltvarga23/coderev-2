@@ -1,6 +1,12 @@
 package selfupdate
 
 import (
+	"bytes"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
@@ -77,4 +83,74 @@ func TestChecksumFor(t *testing.T) {
 	if _, ok := checksumFor(contents, "missing"); ok {
 		t.Error("missing: expected not found")
 	}
+}
+
+func TestChecksumForSkipsComments(t *testing.T) {
+	// A comment whose last word collides with a real asset name must not be
+	// mistaken for a checksum entry.
+	contents := "# coderev-linux-amd64\nabc123  coderev-linux-amd64\n"
+	if sum, ok := checksumFor(contents, "coderev-linux-amd64"); !ok || sum != "abc123" {
+		t.Errorf("got (%q,%v), want (abc123,true)", sum, ok)
+	}
+}
+
+func TestReplaceFile(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "coderev.bin")
+	if err := os.WriteFile(target, []byte("OLD"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := replaceFile(target, []byte("NEW-CONTENT")); err != nil {
+		t.Fatalf("replaceFile: %v", err)
+	}
+	got, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "NEW-CONTENT" {
+		t.Errorf("content = %q, want NEW-CONTENT", got)
+	}
+	if _, err := os.Stat(target + ".new"); !os.IsNotExist(err) {
+		t.Errorf(".new sibling should not remain after a successful swap")
+	}
+}
+
+// TestRun exercises the network-driven paths that do NOT install (so the test
+// binary is never touched) via a mock GitHub API.
+func TestRun(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/releases/latest") {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"tag_name":"v2.0.0","html_url":"http://example/notes","assets":[]}`)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	orig := apiBase
+	apiBase = srv.URL
+	defer func() { apiBase = orig }()
+
+	t.Run("check-only reports a newer version", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := Run(Options{Repo: "owner/repo", CurrentVersion: "1.0.0", CheckOnly: true, Client: srv.Client(), Out: &buf})
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if !strings.Contains(buf.String(), "new version is available") {
+			t.Errorf("missing new-version notice:\n%s", buf.String())
+		}
+	})
+
+	t.Run("already up to date", func(t *testing.T) {
+		var buf bytes.Buffer
+		err := Run(Options{Repo: "owner/repo", CurrentVersion: "2.0.0", Client: srv.Client(), Out: &buf})
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if !strings.Contains(buf.String(), "Already up to date") {
+			t.Errorf("missing up-to-date notice:\n%s", buf.String())
+		}
+	})
 }
