@@ -17,6 +17,7 @@ import (
 	"github.com/coderev/coderev/internal/diffparse"
 	"github.com/coderev/coderev/internal/gitx"
 	"github.com/coderev/coderev/internal/prompt"
+	"github.com/coderev/coderev/internal/selfupdate"
 	"github.com/coderev/coderev/internal/ui"
 )
 
@@ -48,6 +49,11 @@ func run() int {
 	// `init` subcommand: generate a .coderev.json and exit.
 	if len(os.Args) > 1 && os.Args[1] == "init" {
 		return runInit(os.Args[2:], repoRoot)
+	}
+
+	// `update` subcommand: self-update the CLI from GitHub Releases and exit.
+	if len(os.Args) > 1 && os.Args[1] == "update" {
+		return runUpdate(os.Args[2:])
 	}
 
 	res, err := config.Parse(os.Args[1:], os.Getenv, repoRoot, os.Stderr)
@@ -248,6 +254,32 @@ func runInit(args []string, repoRoot string) int {
 		return 1
 	}
 	fmt.Printf("%s %s\n", tr(res.Config.Lang, "Konfiguráció kiírva:", "Wrote config:"), res.Path)
+	return 0
+}
+
+// runUpdate handles the `update` subcommand: check GitHub Releases for a newer
+// CLI build and, unless --check is given, download (with checksum verification)
+// and replace the running binary.
+func runUpdate(args []string) int {
+	checkOnly := false
+	for _, a := range args {
+		switch a {
+		case "--check", "-check":
+			checkOnly = true
+		case "-h", "--help":
+			fmt.Println("Usage: coderev update [--check]")
+			fmt.Println("  Updates the coderev CLI from GitHub Releases.")
+			fmt.Println("  --check   only report whether a newer version exists")
+			return 0
+		}
+	}
+	if err := selfupdate.Run(selfupdate.Options{
+		CurrentVersion: version,
+		CheckOnly:      checkOnly,
+	}); err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %v\n", err)
+		return 1
+	}
 	return 0
 }
 
