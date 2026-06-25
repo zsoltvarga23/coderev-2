@@ -57,6 +57,7 @@
             <Button Content="⤓ .html" Click="OnExportHtml" ToolTip.Tip="{loc:Tr ExportHtmlTip}"/>
             <Button Content="{loc:Tr ThemeBtn}" Click="OnToggleTheme"/>
             <Button Content="{loc:Tr UiLangToggle}" Click="OnToggleLanguage"/>
+            <Button Content="{loc:Tr UpdateBtn}" Click="OnCheckForUpdates" ToolTip.Tip="{loc:Tr UpdateTip}"/>
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <Button Content="{loc:Tr RunBtn}" Command="{Binding RunCommand}"/>
