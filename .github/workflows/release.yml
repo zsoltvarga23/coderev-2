@@ -1,0 +1,157 @@
+name: Release
+
+# Builds the coderev CLI (Go) and desktop GUI (.NET/Avalonia, packaged with
+# Velopack) for Windows and Linux, and publishes them to a GitHub release when a
+# version tag (e.g. v1.2.0) is pushed. The release is left as a DRAFT for review;
+# publish it manually once the assets look right (mirrors the safe, opt-in flow).
+#
+# Nothing is code-signed, so first launch may trip SmartScreen ("More info" ->
+# "Run anyway"). Add CSC_* secrets + `vpk pack --signParams` later if needed.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+# Needed to create the release and upload assets.
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Verify the tag matches the VERSION file and pre-create one draft release so
+  # the per-OS build jobs all publish into it (avoids duplicate drafts).
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify tag matches VERSION
+        run: |
+          FILE_VERSION="v$(tr -d '[:space:]' < VERSION)"
+          if [ "$FILE_VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match VERSION file ($FILE_VERSION). Update VERSION before tagging."
+            exit 1
+          fi
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --draft --title "coderev $GITHUB_REF_NAME" \
+                 --notes "coderev $GITHUB_REF_NAME — review and publish this draft."
+
+  # Build + package per OS. Serialized (max-parallel: 1) so both platforms merge
+  # their Velopack assets into the same draft release without racing.
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            channel: win
+            goos: windows
+            engine: coderev.exe
+            mainexe: CodeRev.App.exe
+            cliasset: coderev-windows-amd64.exe
+          - os: ubuntu-latest
+            rid: linux-x64
+            channel: linux
+            goos: linux
+            engine: coderev
+            mainexe: CodeRev.App
+            cliasset: coderev-linux-amd64
+    runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Resolve version
+        run: echo "VERSION=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_ENV"
+
+      # --- CLI (Go) --------------------------------------------------------
+      - name: Build CLI
+        run: |
+          # The release asset (versioned, downloaded by `coderev update`)…
+          GOOS=${{ matrix.goos }} GOARCH=amd64 \
+            go build -ldflags "-X main.version=${VERSION}" -o "${{ matrix.cliasset }}" ./cmd/coderev
+          # …and a copy named for bundling next to the GUI (BinaryLocator).
+          cp "${{ matrix.cliasset }}" "${{ matrix.engine }}"
+
+      - name: Upload CLI asset
+        run: gh release upload "$GITHUB_REF_NAME" "${{ matrix.cliasset }}" --clobber
+
+      # macOS CLI binaries (cross-compiled on the Linux runner — Go makes this
+      # trivial). There is no macOS GUI build, but `coderev update` / get.sh on a
+      # Mac can install and self-update the CLI. Only do this once (Linux job).
+      - name: Build + upload macOS CLI
+        if: matrix.goos == 'linux'
+        run: |
+          for arch in amd64 arm64; do
+            asset="coderev-darwin-${arch}"
+            GOOS=darwin GOARCH="${arch}" \
+              go build -ldflags "-X main.version=${VERSION}" -o "${asset}" ./cmd/coderev
+            gh release upload "$GITHUB_REF_NAME" "${asset}" --clobber
+          done
+
+      # --- GUI (.NET + Velopack) ------------------------------------------
+      # Folder publish (NOT single-file): Velopack repackages the output itself.
+      - name: Publish GUI
+        run: |
+          dotnet publish coderev-desktop/src/CodeRev.App/CodeRev.App.csproj \
+            -c Release -r ${{ matrix.rid }} --self-contained true \
+            -p:Version=${VERSION} -o publish
+
+      - name: Bundle engine with GUI
+        run: cp "${{ matrix.engine }}" "publish/${{ matrix.engine }}"
+
+      - name: Package + upload with Velopack
+        run: |
+          # Pin vpk to the Velopack NuGet version used by the app (keep in sync).
+          dotnet tool install -g vpk --version 1.2.0
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          # Pull existing channel releases for delta generation (none on first release).
+          vpk download github --repoUrl "https://github.com/${GITHUB_REPOSITORY}" \
+            --channel ${{ matrix.channel }} --token "$GH_TOKEN" || echo "no prior releases (first run)"
+          vpk pack -u CodeRev -v "${VERSION}" -p publish -e "${{ matrix.mainexe }}" \
+            --channel ${{ matrix.channel }} --packTitle "coderev Desktop"
+          # --merge into the existing draft; no --publish, so it stays a draft.
+          vpk upload github --repoUrl "https://github.com/${GITHUB_REPOSITORY}" \
+            --channel ${{ matrix.channel }} --merge --token "$GH_TOKEN" \
+            --tag "$GITHUB_REF_NAME" --releaseName "coderev $GITHUB_REF_NAME"
+
+  # Assemble a single checksums.txt over the raw CLI binaries so `coderev update`
+  # can verify what it downloads. Runs after both CLI assets are uploaded.
+  checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and upload checksums
+        run: |
+          mkdir -p dl && cd dl
+          # Lowercase 'coderev-*' matches only the raw CLI binaries (the Velopack
+          # assets are 'CodeRev-*'), across windows/linux/darwin.
+          gh release download "$GITHUB_REF_NAME" --pattern 'coderev-*' --dir . --clobber
+          sha256sum coderev-* > checksums.txt
+          cat checksums.txt
+          gh release upload "$GITHUB_REF_NAME" checksums.txt --clobber

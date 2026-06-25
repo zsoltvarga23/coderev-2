@@ -1,12 +1,18 @@
+using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using CodeRev.App.Localization;
+using CodeRev.App.Services;
 using CodeRev.App.ViewModels;
 using CodeRev.Core.Export;
 
@@ -102,5 +108,114 @@ public partial class MainWindow : Window
             app.RequestedThemeVariant =
                 app.ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
         }
+    }
+
+    /// <summary>Checks GitHub Releases for a newer version and, on confirmation,
+    /// downloads it and restarts into the new build (via Velopack). No-op with a
+    /// note when running an un-installed dev/portable build.</summary>
+    private async void OnCheckForUpdates(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm)
+            return;
+
+        var svc = new UpdateService();
+        if (!svc.IsInstalled)
+        {
+            vm.StatusText = Loc.Instance.T("StUpdDevBuild");
+            return;
+        }
+
+        vm.StatusText = Loc.Instance.T("StUpdChecking");
+        try
+        {
+            var update = await svc.CheckForUpdatesAsync();
+            var current = svc.CurrentVersion ?? "?";
+            if (update is null)
+            {
+                vm.StatusText = Loc.Instance.T("StUpdNone", current);
+                return;
+            }
+
+            var newVersion = update.TargetFullRelease.Version.ToString();
+            var confirmed = await ConfirmAsync(
+                Loc.Instance.T("UpdDlgTitle"),
+                Loc.Instance.T("UpdDlgBody", newVersion, current));
+            if (!confirmed)
+                return;
+
+            // Cancel the download if the window is closed mid-flight, so the
+            // progress callback never fires against a torn-down VM.
+            using var cts = new CancellationTokenSource();
+            void cancelOnClose(object? s, EventArgs ev) => cts.Cancel();
+            Closed += cancelOnClose;
+            try
+            {
+                // Progress arrives off the UI thread; marshal back before touching VM.
+                await svc.DownloadAsync(update, p =>
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (!cts.IsCancellationRequested)
+                            vm.StatusText = Loc.Instance.T("StUpdDownloading", p);
+                    }), cts.Token);
+            }
+            finally
+            {
+                Closed -= cancelOnClose;
+            }
+
+            vm.StatusText = Loc.Instance.T("StUpdRestarting");
+            svc.ApplyAndRestart(update); // exits this process and relaunches
+        }
+        catch (OperationCanceledException)
+        {
+            // Window closed during download — nothing to report.
+        }
+        catch (Exception ex)
+        {
+            vm.StatusText = Loc.Instance.T("StUpdError", ex.Message);
+        }
+    }
+
+    /// <summary>Minimal modal yes/no confirmation, built in code to avoid a
+    /// dedicated XAML window. Returns false if the dialog is closed any other way.</summary>
+    private async Task<bool> ConfirmAsync(string title, string body)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+
+        var yes = new Button { Content = Loc.Instance.T("UpdYes"), IsDefault = true };
+        var no = new Button { Content = Loc.Instance.T("UpdNo"), IsCancel = true };
+
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 440,
+            SizeToContent = SizeToContent.Height,
+            CanResize = false,
+            ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = new StackPanel
+            {
+                Margin = new Thickness(16),
+                Spacing = 16,
+                Children =
+                {
+                    new TextBlock { Text = body, TextWrapping = TextWrapping.Wrap },
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Spacing = 8,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Children = { no, yes },
+                    },
+                },
+            },
+        };
+
+        yes.Click += (_, _) => { tcs.TrySetResult(true); dialog.Close(); };
+        no.Click += (_, _) => { tcs.TrySetResult(false); dialog.Close(); };
+        dialog.Closed += (_, _) => tcs.TrySetResult(false);
+
+        await dialog.ShowDialog(this);
+        return await tcs.Task;
     }
 }

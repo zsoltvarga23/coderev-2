@@ -10,7 +10,7 @@
   <DockPanel Margin="16">
     <StackPanel DockPanel.Dock="Top" Spacing="2">
       <TextBlock Text="coderev Desktop" FontWeight="Bold" FontSize="20"/>
-      <TextBlock Text="{loc:Tr AboutSubtitle}" Foreground="Gray"/>
+      <TextBlock x:Name="SubtitleText" Foreground="Gray"/>
     </StackPanel>
 
     <Button DockPanel.Dock="Bottom" Content="{loc:Tr Close}" HorizontalAlignment="Right"

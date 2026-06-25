@@ -140,6 +140,6 @@ func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
 
 func usage(out io.Writer, fs *flag.FlagSet) {
 	fmt.Fprintln(out, "coderev — AI-alapú PR review (pluggable agent)")
-	fmt.Fprintln(out, "\nHasználat:\n  coderev <branch> [opciók]\n  coderev init [opciók]      # .coderev.json generálása\n\nOpciók:")
+	fmt.Fprintln(out, "\nHasználat:\n  coderev <branch> [opciók]\n  coderev init [opciók]      # .coderev.json generálása\n  coderev update [--check]   # a CLI frissítése GitHub Release-ből\n\nOpciók:")
 	fs.PrintDefaults()
 }

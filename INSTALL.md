@@ -1,47 +1,100 @@
 # Telepítés
 
-Egyszerű, **per-user** (admin nélküli) telepítés belsős használatra. Telepíthető
-külön a **CLI**, külön a **GUI**, vagy **mindkettő**. Nincs aláírás/cert — a GUI
-első indításakor a Windows SmartScreen figyelmeztethet: *„További információ" →
-„Futtatás mindenképp"*.
+Két út van, **válaszd a felsőt, ha csak használni szeretnéd**:
 
-## Előfeltételek
+1. **Release-ből (ajánlott)** — előre lefordított, ellenőrzött bináris. **Nem kell
+   Go, .NET SDK vagy bármilyen fejlesztői csomag a gépedre.** Telepítés után az
+   alkalmazás **magát frissíti** (gombnyomásra a GUI-ban vagy `coderev update`
+   a CLI-nél).
+2. **Forrásból** (lentebb, „Fejlesztői telepítés") — fordítás Go-val és .NET
+   SDK-val. Csak fejlesztéshez.
 
-| Mit telepítesz | Mi kell hozzá a fordításhoz |
-|---|---|
-| CLI | [Go](https://go.dev/dl/) |
-| GUI | [.NET SDK](https://dotnet.microsoft.com/download) **és** Go (a motor binárist a GUI mellé csomagoljuk) |
+Nincs aláírás/cert — a GUI első indításakor a Windows SmartScreen figyelmeztethet:
+*„További információ" → „Futtatás mindenképp"*.
 
-Futtatáskor mindkettőhöz kell a `git` a PATH-on. Valódi AI-review-hoz egy agent
-CLI is kell (codex/copilot/claude); a Claude-hoz a különálló Claude Code CLI
-(`npm i -g @anthropic-ai/claude-code`). Dry-run módban nem kell agent.
+---
 
-> A self-contained GUI **nem igényel .NET runtime-ot a futtató gépen** — a publi-
-> kált mappa átmásolható más (azonos platformú) gépre is, telepítés nélkül futtatható.
+## 1. Telepítés release-ből (SDK nélkül)
 
-## Windows
+A kiadások a **[GitHub Releases](https://github.com/zsoltvarga23/coderev-2/releases)**
+oldalon vannak. Telepíthető külön a **GUI**, külön a **CLI**, vagy mindkettő.
 
-A repó gyökeréből:
+### GUI (asztali alkalmazás)
+
+| Platform | Mit tölts le | Mit csinálj |
+|---|---|---|
+| **Windows** | `CodeRev-win-Setup.exe` | Futtasd — telepít, parancsikont rak ki, elindítja. |
+| **Linux** | a `*.AppImage` fájl | `chmod +x` után dupla kattintás / futtatás. |
+
+A GUI a **Velopack** keretrendszerrel készül: a `⬆ Frissítés` gombbal bármikor
+ellenőrzi és egy lépésben telepíti az újabb verziót, majd újraindul. A `coderev`
+motor a csomag **része**, külön nem kell telepíteni.
+
+> **macOS:** GUI-csomag jelenleg **nem** készül; a **CLI** viszont elérhető
+> macre is (lásd lent), és a `coderev update`-tel frissül.
+
+### CLI (parancssori eszköz)
+
+**A leggyorsabb** — letöltő szkript (nem fordít, csak letölti és PATH-ra teszi a
+checksum-ellenőrzött binárist):
 
 ```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/zsoltvarga23/coderev-2/main/get.ps1 | iex
+```
+
+```bash
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/zsoltvarga23/coderev-2/main/get.sh | bash
+```
+
+Vagy **kézzel**: töltsd le a platformodhoz tartozó binárist a Releases oldalról
+(`coderev-windows-amd64.exe` / `coderev-linux-amd64` / `coderev-darwin-arm64`),
+nevezd át `coderev`(.exe)-re, és tedd egy PATH-on lévő mappába.
+
+---
+
+## 2. Frissítés
+
+| Komponens | Hogyan |
+|---|---|
+| **GUI** | A `⬆ Frissítés` gomb az appban: ellenőriz, letölt, újraindul. (Velopack) |
+| **CLI** | `coderev update` — letölti és ellenőrzi (SHA-256) az új verziót, és lecseréli magát. `coderev update --check` csak megnézi, van-e újabb. |
+
+Mindkettő ugyanarról a GitHub Release-ről frissít, amelyikből a telepítés
+készült. Más forrás (pl. fork): `CODEREV_UPDATE_URL` (GUI) / `CODEREV_UPDATE_REPO`
+(CLI) környezeti változó.
+
+---
+
+## Hogyan találja a GUI a motort
+
+Keresési sorrend: `CODEREV_BIN` környezeti változó → az app mellé csomagolt
+bináris → `PATH`. A release-csomagban a motor mellé van csomagolva, így
+automatikusan megtalálja.
+
+Futtatáskor kell a `git` a PATH-on. Valódi AI-review-hoz egy agent CLI is kell
+(codex/copilot/claude); a Claude-hoz a különálló Claude Code CLI
+(`npm i -g @anthropic-ai/claude-code`). Dry-run módban nem kell agent.
+
+---
+
+## Fejlesztői telepítés (forrásból)
+
+Ehhez **kell** a fordítóeszköz: a CLI-hez [Go](https://go.dev/dl/), a GUI-hoz a
+[.NET SDK](https://dotnet.microsoft.com/download) **és** Go (a motort a GUI mellé
+fordítja). Forrásból, per-user, admin nélkül telepít:
+
+```powershell
+# Windows
 ./install.ps1                 # CLI + GUI
 ./install.ps1 -Component cli  # csak a parancssori eszköz
 ./install.ps1 -Component gui  # csak az asztali app
 ./install.ps1 -Uninstall      # eltávolítás
 ```
 
-Mit csinál:
-- **CLI** → `%LOCALAPPDATA%\coderev\bin\coderev.exe`, és felveszi a mappát a
-  felhasználói **PATH**-ra (új terminál kell hozzá). Utána bárhol: `coderev <branch>`.
-- **GUI** → `%LOCALAPPDATA%\coderev\gui\` (self-contained, egy exe), a motor
-  binárist mellécsomagolva, és **Start menü parancsikonnal** („coderev").
-
-Hasznos kapcsolók: `-Prefix <mappa>` (más telepítési hely), `-NoPath`,
-`-NoShortcut`, `-Rid linux-x64` (kereszt-publikálás).
-
-## Linux / macOS
-
 ```bash
+# Linux / macOS
 chmod +x install.sh
 ./install.sh            # CLI + GUI
 ./install.sh cli        # csak CLI
@@ -49,23 +102,16 @@ chmod +x install.sh
 ./install.sh --uninstall
 ```
 
-- **CLI** → `~/.local/bin/coderev` (legyen a `~/.local/bin` a PATH-on).
-- **GUI** → `~/.local/share/coderev/gui/` + `.desktop` bejegyzés (megjelenik az
-  alkalmazás-menüben), a motor mellécsomagolva.
+- **CLI** → `%LOCALAPPDATA%\coderev\bin\coderev.exe` (Win) / `~/.local/bin/coderev`
+  (Linux/macOS), felveszi a mappát a felhasználói **PATH**-ra.
+- **GUI** → `%LOCALAPPDATA%\coderev\gui\` (Win) / `~/.local/share/coderev/gui/`
+  (self-contained, a motor mellécsomagolva), Start menü / `.desktop` bejegyzéssel.
 
-## Hogyan találja a GUI a motort
+> A forrásból telepített GUI **nem** kap Velopack auto-update-et (az csak a
+> release-csomagban van). Fejlesztéshez ez a normális; éles használatra a
+> release-telepítés ajánlott.
 
-A telepítő a `coderev` motort **a GUI mappájába másolja**, így az automatikusan
-megtalálja. A keresési sorrend: `CODEREV_BIN` környezeti változó → az app mellé
-csomagolt bináris → `PATH`. Külön motorra mutatás: állítsd a `CODEREV_BIN`-t.
+Hasznos `install.ps1` kapcsolók: `-Prefix <mappa>`, `-NoPath`, `-NoShortcut`,
+`-Rid linux-x64` (kereszt-publikálás).
 
-## Terjesztés telepítő nélkül (másik gépre)
-
-Mivel a CLI statikus bináris, a GUI pedig self-contained, elég átmásolni:
-- CLI: a `coderev(.exe)` fájl bárhova, ami a PATH-on van;
-- GUI: a teljes `gui/` mappa (benne a mellékelt motorral) — dupla kattintás a
-  `CodeRev.App(.exe)`-re.
-
-Csomag előállítása terjesztéshez: `coderev-desktop/publish.ps1` (lásd a desktop
-README-t), vagy `./install.ps1 -Prefix <staging> -NoPath -NoShortcut` és a
-keletkező mappa zippelése.
+Kiadás készítése (karbantartóknak): lásd **[RELEASING.md](RELEASING.md)**.

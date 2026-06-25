@@ -45,7 +45,9 @@ need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing: $1 - $2"; exit 1; }
 
 build_engine() { # $1 = output path
   need go "install: https://go.dev/dl/"
-  ( cd "$REPO_ROOT" && go build -o "$1" ./cmd/coderev )
+  local ver="dev"
+  [ -f "$REPO_ROOT/VERSION" ] && ver="$(tr -d '[:space:]' < "$REPO_ROOT/VERSION")"
+  ( cd "$REPO_ROOT" && go build -ldflags "-X main.version=$ver" -o "$1" ./cmd/coderev )
 }
 
 if [ "$COMPONENT" = "cli" ] || [ "$COMPONENT" = "all" ]; then

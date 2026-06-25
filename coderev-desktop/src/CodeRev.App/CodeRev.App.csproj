@@ -11,7 +11,8 @@
     <RootNamespace>CodeRev.App</RootNamespace>
     <!-- Cross-platform self-contained publishing targets. -->
     <RuntimeIdentifiers>win-x64;linux-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
-    <Version>1.0.0</Version>
+    <!-- Version comes from ..\..\Directory.Build.props (repo-root VERSION file);
+         CI overrides it with /p:Version=X.Y.Z. -->
     <!-- Embeds the icon into the Windows .exe (and thus the Start Menu shortcut). -->
     <ApplicationIcon>Assets\coderev.ico</ApplicationIcon>
   </PropertyGroup>
@@ -31,6 +32,9 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <!-- Installer + in-app auto-update framework (GitHub Releases backend).
+         Pairs with the `vpk` CLI used by .github/workflows/release.yml. -->
+    <PackageReference Include="Velopack" Version="1.2.0" />
     <!-- Override the vulnerable transitive Tmds.DBus.Protocol 0.20.0 (pulled by
          the Avalonia Linux backend) with the patched 0.21.3 — advisory
          GHSA-xrw6-gwf8-vvr9. 0.21.x is API-close to 0.20.x, so Avalonia is unaffected. -->
