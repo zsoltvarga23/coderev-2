@@ -1,0 +1,19 @@
+<Project>
+
+  <!--
+    Single source of truth for the desktop app version: the repo-root VERSION
+    file. CI overrides this by passing /p:Version=X.Y.Z explicitly, but for local
+    builds this keeps the GUI version in lockstep with the Go engine (which reads
+    the same file via -ldflags). See RELEASING.md.
+  -->
+  <PropertyGroup>
+    <_VersionFile>$(MSBuildThisFileDirectory)..\VERSION</_VersionFile>
+    <CodeRevVersion Condition="Exists('$(_VersionFile)')">$([System.IO.File]::ReadAllText('$(_VersionFile)').Trim())</CodeRevVersion>
+    <CodeRevVersion Condition="'$(CodeRevVersion)' == ''">0.0.0</CodeRevVersion>
+
+    <!-- Default the version from the file. A command-line /p:Version=X.Y.Z
+         (used by CI) is a global property and overrides this. -->
+    <Version>$(CodeRevVersion)</Version>
+  </PropertyGroup>
+
+</Project>

@@ -39,6 +39,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$VersionFile = Join-Path $RepoRoot 'VERSION'
+$Version = if (Test-Path $VersionFile) { (Get-Content $VersionFile -Raw).Trim() } else { 'dev' }
 $BinDir = Join-Path $Prefix 'bin'
 $GuiDir = Join-Path $Prefix 'gui'
 $ShortcutPath = Join-Path ([Environment]::GetFolderPath('Programs')) 'coderev.lnk'
@@ -85,7 +87,7 @@ if ($doCli) {
     Require-Tool 'go' 'Install Go: https://go.dev/dl/'
     New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
     Push-Location $RepoRoot
-    try { & go build -o (Join-Path $BinDir 'coderev.exe') ./cmd/coderev }
+    try { & go build -ldflags "-X main.version=$Version" -o (Join-Path $BinDir 'coderev.exe') ./cmd/coderev }
     finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) { throw "go build failed." }
     Write-Host "    installed: $BinDir\coderev.exe" -ForegroundColor Green
@@ -107,7 +109,7 @@ if ($doGui) {
     # Bundle the engine next to the GUI so it is found without PATH setup.
     Write-Step "Bundling the engine with the GUI"
     Push-Location $RepoRoot
-    try { & go build -o (Join-Path $GuiDir 'coderev.exe') ./cmd/coderev }
+    try { & go build -ldflags "-X main.version=$Version" -o (Join-Path $GuiDir 'coderev.exe') ./cmd/coderev }
     finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) { throw "go build (for the GUI) failed." }
     Write-Host "    installed: $GuiDir\CodeRev.App.exe (+ bundled coderev.exe)" -ForegroundColor Green
