@@ -109,6 +109,13 @@ public partial class MainWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(StopCommand))]
     private bool _isRunning;
 
+    /// <summary>Whether a newer version was found at startup; drives the update
+    /// button's visibility (hidden when up to date or in a dev build).</summary>
+    [ObservableProperty] private bool _updateAvailable;
+
+    /// <summary>Tooltip for the update button, e.g. "Update available: v1.1.0".</summary>
+    [ObservableProperty] private string _updateTipText = "";
+
     [ObservableProperty] private string _statusText = Loc.Instance.T("StReady");
     [ObservableProperty] private string _metaText = "";
     [ObservableProperty] private string _reviewText = "";
