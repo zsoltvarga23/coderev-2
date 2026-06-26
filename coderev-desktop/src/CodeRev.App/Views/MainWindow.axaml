@@ -13,10 +13,26 @@
         Title="coderev Desktop">
 
   <Window.Resources>
-    <conv:DiffBackgroundConverter x:Key="DiffBg"/>
     <conv:DiffLineNumberConverter x:Key="LineNo"/>
     <conv:SeverityBrushConverter x:Key="SevBg"/>
   </Window.Resources>
+
+  <Window.Styles>
+    <!-- Theme-aware diff row backgrounds (brushes in App.axaml). Context rows
+         carry no class and stay transparent. -->
+    <Style Selector="Border.diffAdded">
+      <Setter Property="Background" Value="{DynamicResource DiffAddedBg}"/>
+    </Style>
+    <Style Selector="Border.diffRemoved">
+      <Setter Property="Background" Value="{DynamicResource DiffRemovedBg}"/>
+    </Style>
+    <Style Selector="Border.diffHunk">
+      <Setter Property="Background" Value="{DynamicResource DiffHunkBg}"/>
+    </Style>
+    <Style Selector="Border.diffMeta">
+      <Setter Property="Background" Value="{DynamicResource DiffMetaBg}"/>
+    </Style>
+  </Window.Styles>
 
   <Grid RowDefinitions="Auto,*,Auto" Margin="12">
 
@@ -152,7 +168,10 @@
               <ItemsControl ItemsSource="{Binding VisibleDiffLines}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="m:DiffLine">
-                    <Border Background="{Binding Kind, Converter={StaticResource DiffBg}}">
+                    <Border Classes.diffAdded="{Binding IsAdded}"
+                            Classes.diffRemoved="{Binding IsRemoved}"
+                            Classes.diffHunk="{Binding IsHunk}"
+                            Classes.diffMeta="{Binding IsMeta}">
                       <Grid ColumnDefinitions="48,*">
                         <TextBlock Grid.Column="0" Text="{Binding Converter={StaticResource LineNo}}"
                                    Foreground="Gray" TextAlignment="Right" Margin="0,0,8,0"

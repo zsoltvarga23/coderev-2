@@ -5,28 +5,6 @@ using CodeRev.Core.Models;
 
 namespace CodeRev.App.Converters;
 
-/// <summary>Maps a diff line kind to a row background. Semi-transparent colors
-/// read well on both light and dark themes.</summary>
-public sealed class DiffBackgroundConverter : IValueConverter
-{
-    private static readonly IBrush Added = new SolidColorBrush(Color.FromArgb(48, 46, 160, 67));
-    private static readonly IBrush Removed = new SolidColorBrush(Color.FromArgb(48, 203, 36, 49));
-    private static readonly IBrush Hunk = new SolidColorBrush(Color.FromArgb(32, 3, 102, 214));
-    private static readonly IBrush Meta = new SolidColorBrush(Color.FromArgb(40, 128, 128, 128));
-
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value switch
-        {
-            DiffLineKind.Added => Added,
-            DiffLineKind.Removed => Removed,
-            DiffLineKind.Hunk => Hunk,
-            DiffLineKind.Meta => Meta,
-            _ => Brushes.Transparent,
-        };
-
-    public object? ConvertBack(object? value, Type t, object? p, CultureInfo c) => null;
-}
-
 /// <summary>Formats a diff line's gutter number (new side, else old side).</summary>
 public sealed class DiffLineNumberConverter : IValueConverter
 {
