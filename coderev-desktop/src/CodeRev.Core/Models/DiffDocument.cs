@@ -3,7 +3,15 @@ namespace CodeRev.Core.Models;
 public enum DiffLineKind { Hunk, Added, Removed, Context, Meta }
 
 /// <summary>One rendered line of a diff, with old/new line numbers where known.</summary>
-public sealed record DiffLine(DiffLineKind Kind, string Text, int? OldNo, int? NewNo);
+public sealed record DiffLine(DiffLineKind Kind, string Text, int? OldNo, int? NewNo)
+{
+    // Per-kind flags so the view can toggle theme-aware style classes (the row
+    // background colors live in App.axaml's light/dark theme dictionaries).
+    public bool IsAdded => Kind == DiffLineKind.Added;
+    public bool IsRemoved => Kind == DiffLineKind.Removed;
+    public bool IsHunk => Kind == DiffLineKind.Hunk;
+    public bool IsMeta => Kind == DiffLineKind.Meta;
+}
 
 /// <summary>All changes for a single file in a diff.</summary>
 public sealed class DiffFile

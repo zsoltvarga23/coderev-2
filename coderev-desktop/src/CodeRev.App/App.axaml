@@ -2,6 +2,36 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="CodeRev.App.App"
              RequestedThemeVariant="Default">
+  <Application.Resources>
+    <ResourceDictionary>
+      <!-- Diff row backgrounds, tuned per theme. The previous single set of
+           ~19%-alpha colors was nearly invisible on the dark background; the
+           dark variant uses brighter greens/reds at higher alpha. Referenced as
+           DynamicResource so they re-resolve live when the theme is toggled. -->
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="DiffAddedBg" Color="#332EA043"/>
+          <SolidColorBrush x:Key="DiffRemovedBg" Color="#33CB2431"/>
+          <SolidColorBrush x:Key="DiffHunkBg" Color="#220366D6"/>
+          <SolidColorBrush x:Key="DiffMetaBg" Color="#22808080"/>
+          <!-- Markdown code (review view): a subtly darker panel on light. -->
+          <SolidColorBrush x:Key="CodeBlockBg" Color="#0F000000"/>
+          <SolidColorBrush x:Key="CodeBlockBorder" Color="#25000000"/>
+          <SolidColorBrush x:Key="CodeInlineBg" Color="#14000000"/>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="DiffAddedBg" Color="#553FB950"/>
+          <SolidColorBrush x:Key="DiffRemovedBg" Color="#55F85149"/>
+          <SolidColorBrush x:Key="DiffHunkBg" Color="#403B82F6"/>
+          <SolidColorBrush x:Key="DiffMetaBg" Color="#33A0A0A0"/>
+          <!-- Markdown code (review view): a subtly lighter panel on dark. -->
+          <SolidColorBrush x:Key="CodeBlockBg" Color="#1FFFFFFF"/>
+          <SolidColorBrush x:Key="CodeBlockBorder" Color="#33FFFFFF"/>
+          <SolidColorBrush x:Key="CodeInlineBg" Color="#1FFFFFFF"/>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
   <Application.Styles>
     <FluentTheme />
   </Application.Styles>

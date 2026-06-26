@@ -20,7 +20,42 @@ namespace CodeRev.App.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow() => InitializeComponent();
+    // Set by the startup update check; the update button is shown (and acts) only
+    // when a newer version was actually found.
+    private UpdateService? _updateService;
+    private Velopack.UpdateInfo? _pendingUpdate;
+
+    public MainWindow()
+    {
+        InitializeComponent();
+        Opened += OnWindowOpened;
+    }
+
+    /// <summary>On launch, quietly check GitHub Releases. If a newer version is
+    /// available (and this is a real installed build), reveal the update button;
+    /// otherwise it stays hidden. Failures (offline, no release) are ignored.</summary>
+    private async void OnWindowOpened(object? sender, EventArgs e)
+    {
+        Opened -= OnWindowOpened; // run once
+        if (DataContext is not MainWindowViewModel vm)
+            return;
+        try
+        {
+            _updateService = new UpdateService();
+            if (!_updateService.IsInstalled)
+                return; // dev/portable build: no in-app updates, keep the button hidden
+            var update = await _updateService.CheckForUpdatesAsync();
+            if (update is null)
+                return; // up to date
+            _pendingUpdate = update;
+            vm.UpdateTipText = Loc.Instance.T("UpdAvailableTip", update.TargetFullRelease.Version.ToString());
+            vm.UpdateAvailable = true;
+        }
+        catch
+        {
+            // Network error / no published release — leave the button hidden.
+        }
+    }
 
     /// <summary>Switches the UI language (English &lt;-&gt; Hungarian) live.</summary>
     private void OnToggleLanguage(object? sender, RoutedEventArgs e) => Loc.Instance.Toggle();
@@ -110,33 +145,19 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Checks GitHub Releases for a newer version and, on confirmation,
-    /// downloads it and restarts into the new build (via Velopack). No-op with a
-    /// note when running an un-installed dev/portable build.</summary>
-    private async void OnCheckForUpdates(object? sender, RoutedEventArgs e)
+    /// <summary>Installs the update found at startup: confirm, download (with
+    /// progress) and restart into the new build via Velopack. The button this is
+    /// wired to is only visible when <see cref="_pendingUpdate"/> is set.</summary>
+    private async void OnUpdate(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is not MainWindowViewModel vm)
+        if (DataContext is not MainWindowViewModel vm || _updateService is null || _pendingUpdate is null)
             return;
 
-        var svc = new UpdateService();
-        if (!svc.IsInstalled)
-        {
-            vm.StatusText = Loc.Instance.T("StUpdDevBuild");
-            return;
-        }
-
-        vm.StatusText = Loc.Instance.T("StUpdChecking");
+        var update = _pendingUpdate;
+        var current = _updateService.CurrentVersion ?? "?";
+        var newVersion = update.TargetFullRelease.Version.ToString();
         try
         {
-            var update = await svc.CheckForUpdatesAsync();
-            var current = svc.CurrentVersion ?? "?";
-            if (update is null)
-            {
-                vm.StatusText = Loc.Instance.T("StUpdNone", current);
-                return;
-            }
-
-            var newVersion = update.TargetFullRelease.Version.ToString();
             var confirmed = await ConfirmAsync(
                 Loc.Instance.T("UpdDlgTitle"),
                 Loc.Instance.T("UpdDlgBody", newVersion, current));
@@ -151,7 +172,7 @@ public partial class MainWindow : Window
             try
             {
                 // Progress arrives off the UI thread; marshal back before touching VM.
-                await svc.DownloadAsync(update, p =>
+                await _updateService.DownloadAsync(update, p =>
                     Dispatcher.UIThread.Post(() =>
                     {
                         if (!cts.IsCancellationRequested)
@@ -164,7 +185,7 @@ public partial class MainWindow : Window
             }
 
             vm.StatusText = Loc.Instance.T("StUpdRestarting");
-            svc.ApplyAndRestart(update); // exits this process and relaunches
+            _updateService.ApplyAndRestart(update); // exits this process and relaunches
         }
         catch (OperationCanceledException)
         {

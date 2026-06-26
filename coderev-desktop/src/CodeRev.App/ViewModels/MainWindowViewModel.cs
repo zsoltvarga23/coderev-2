@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using Avalonia.Threading;
 using CodeRev.App.Localization;
 using CodeRev.Core.Config;
@@ -22,6 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ICoderevRunner _runner;
     private readonly HistoryStore _history;
+    private readonly RecentRepositoriesStore _recentStore;
     private readonly Dictionary<int, StepViewModel> _stepById = new();
     private CancellationTokenSource? _cts;
     private string _lastDiffUnified = "";
@@ -29,11 +31,14 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel() : this(new CoderevRunner(), new HistoryStore()) { }
 
-    public MainWindowViewModel(ICoderevRunner runner, HistoryStore? history = null)
+    public MainWindowViewModel(ICoderevRunner runner, HistoryStore? history = null,
+        RecentRepositoriesStore? recent = null)
     {
         _runner = runner;
         _history = history ?? new HistoryStore();
+        _recentStore = recent ?? new RecentRepositoriesStore();
         RefreshHistory();
+        LoadRecentRepositories();
     }
 
     [ObservableProperty] private string _repositoryPath = "";
@@ -41,6 +46,22 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Local branches of the current repo, for branch autocomplete.</summary>
     public ObservableCollection<string> Branches { get; } = new();
+
+    /// <summary>Recently opened repositories, newest first, for repo autocomplete.</summary>
+    public ObservableCollection<RecentRepository> RecentRepositories { get; } = new();
+
+    private void LoadRecentRepositories()
+    {
+        RecentRepositories.Clear();
+        foreach (var r in _recentStore.List())
+            RecentRepositories.Add(r);
+    }
+
+    private void RememberRepository(string path)
+    {
+        try { _recentStore.Add(path); }
+        catch { /* MRU list is best-effort; never disrupt the user */ }
+    }
 
     private CancellationTokenSource? _branchCts;
 
@@ -68,11 +89,17 @@ public partial class MainWindowViewModel : ObservableObject
         if (ct.IsCancellationRequested)
             return;
 
+        // A confirmed git repo gets remembered for the recent-repos autocomplete.
+        if (isRepo)
+            RememberRepository(path);
+
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
             Branches.Clear();
             foreach (var b in branches)
                 Branches.Add(b);
+            if (isRepo)
+                LoadRecentRepositories();
             ImportRepoConfig();
             var note = CoderevConfig.Exists(path) ? Loc.Instance.T("StConfigImported") : "";
             StatusText = isRepo
@@ -108,6 +135,13 @@ public partial class MainWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(StopCommand))]
     private bool _isRunning;
 
+    /// <summary>Whether a newer version was found at startup; drives the update
+    /// button's visibility (hidden when up to date or in a dev build).</summary>
+    [ObservableProperty] private bool _updateAvailable;
+
+    /// <summary>Tooltip for the update button, e.g. "Update available: v1.1.0".</summary>
+    [ObservableProperty] private string _updateTipText = "";
+
     [ObservableProperty] private string _statusText = Loc.Instance.T("StReady");
     [ObservableProperty] private string _metaText = "";
     [ObservableProperty] private string _reviewText = "";
@@ -116,8 +150,25 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<StepViewModel> Steps { get; } = new();
     public ObservableCollection<string> Log { get; } = new();
 
-    // D5: past runs.
+    // D5: past runs. History is the filtered view; _allHistory is the full list.
     public ObservableCollection<ReviewHistoryEntry> History { get; } = new();
+    private readonly List<ReviewHistoryEntry> _allHistory = new();
+
+    /// <summary>Repository filter options for the history tab: an "all" label
+    /// (always index 0) followed by the distinct repositories seen in history.</summary>
+    public ObservableCollection<string> RepositoryOptions { get; } = new();
+
+    [ObservableProperty] private string _repositoryFilter = "";
+
+    // Suppresses the filter re-apply while RefreshHistory bulk-updates the filter,
+    // so the list is rebuilt exactly once (no flicker / redundant work).
+    private bool _suppressFilterApply;
+
+    partial void OnRepositoryFilterChanged(string value)
+    {
+        if (!_suppressFilterApply)
+            ApplyHistoryFilter();
+    }
 
     [ObservableProperty] private ReviewHistoryEntry? _selectedHistoryEntry;
 
@@ -312,7 +363,8 @@ public partial class MainWindowViewModel : ObservableObject
         ReviewHistoryEntry.Create(Branch, BaseRef,
             IsPlaceholder(Agent) ? "" : Agent,
             IsPlaceholder(Lang) ? "" : Lang,
-            _changedCount, ReviewText, _lastDiffUnified);
+            _changedCount, ReviewText, _lastDiffUnified,
+            ReviewHistoryEntry.RepositoryNameFromPath(RepositoryPath));
 
     private void SaveToHistory()
     {
@@ -329,8 +381,47 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void RefreshHistory()
     {
+        _allHistory.Clear();
+        _allHistory.AddRange(_history.List());
+
+        // Rebuild the filter options: localized "all" + distinct repo names.
+        var allLabel = Loc.Instance.T("HistAllRepos");
+        var repos = _allHistory
+            .Select(RepoLabelOf)
+            .Distinct()
+            .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        RepositoryOptions.Clear();
+        RepositoryOptions.Add(allLabel);
+        foreach (var r in repos)
+            RepositoryOptions.Add(r);
+
+        // Reset to "all" if the current filter is gone. Suppress the change
+        // handler's apply during this bulk update so we apply exactly once below.
+        _suppressFilterApply = true;
+        if (!RepositoryOptions.Contains(RepositoryFilter))
+            RepositoryFilter = allLabel;
+        _suppressFilterApply = false;
+        ApplyHistoryFilter();
+    }
+
+    /// <summary>Display label for an entry's repository ("(unknown)" when blank,
+    /// e.g. entries saved before the field existed).</summary>
+    private static string RepoLabelOf(ReviewHistoryEntry e) =>
+        string.IsNullOrWhiteSpace(e.Repository) ? Loc.Instance.T("HistUnknownRepo") : e.Repository;
+
+    /// <summary>Applies the repository filter to produce the visible History list.</summary>
+    private void ApplyHistoryFilter()
+    {
+        var allLabel = RepositoryOptions.Count > 0 ? RepositoryOptions[0] : "";
+        IEnumerable<ReviewHistoryEntry> view = _allHistory;
+        if (!string.IsNullOrEmpty(RepositoryFilter) && RepositoryFilter != allLabel)
+            view = _allHistory.Where(e =>
+                string.Equals(RepoLabelOf(e), RepositoryFilter, StringComparison.OrdinalIgnoreCase));
+
         History.Clear();
-        foreach (var e in _history.List())
+        foreach (var e in view)
             History.Add(e);
     }
 
