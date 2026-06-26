@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using CodeRev.Core.Protocol;
 
 namespace CodeRev.Core.Engine;
@@ -52,6 +53,11 @@ public sealed class CoderevRunner : ICoderevRunner
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
+            // The Go engine writes UTF-8; without this the runtime decodes stdout
+            // with the OS console code page, garbling non-ASCII text (e.g. the
+            // Hungarian review). Force UTF-8 on both pipes.
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
         };
         foreach (var arg in options.ToArguments())
             psi.ArgumentList.Add(arg);
