@@ -4,6 +4,7 @@
         xmlns:m="using:CodeRev.Core.Models"
         xmlns:hist="using:CodeRev.Core.History"
         xmlns:conv="using:CodeRev.App.Converters"
+        xmlns:ctrl="using:CodeRev.App.Controls"
         xmlns:loc="using:CodeRev.App.Localization"
         x:Class="CodeRev.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -107,7 +108,7 @@
                                 Padding="8,4" CornerRadius="6,6,0,0">
                           <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="Bold"/>
                         </Border>
-                        <SelectableTextBlock Text="{Binding Body}" Margin="10" TextWrapping="Wrap"/>
+                        <ctrl:MarkdownView Markdown="{Binding Body}" Margin="10"/>
                       </StackPanel>
                     </Border>
                   </DataTemplate>
@@ -121,8 +122,13 @@
 
         <!-- Diff: file sidebar + colored, line-numbered rows -->
         <TabItem Header="{loc:Tr TabDiff}">
-          <Grid ColumnDefinitions="210,*">
-            <DockPanel Grid.Column="0" Margin="0,0,8,0">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="210" MinWidth="120"/>
+              <ColumnDefinition Width="Auto"/>
+              <ColumnDefinition Width="*" MinWidth="200"/>
+            </Grid.ColumnDefinitions>
+            <DockPanel Grid.Column="0" Margin="0,0,4,0">
               <Button DockPanel.Dock="Top" Content="{loc:Tr ShowAllFiles}" Command="{Binding ShowAllFilesCommand}"
                       HorizontalAlignment="Stretch" Margin="0,0,0,6"/>
               <ListBox ItemsSource="{Binding DiffFiles}" SelectedItem="{Binding SelectedDiffFile}">
@@ -137,7 +143,12 @@
               </ListBox>
             </DockPanel>
 
-            <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto">
+            <GridSplitter Grid.Column="1" Width="5" ResizeDirection="Columns"
+                          Background="Transparent" ShowsPreview="False"
+                          HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                          ToolTip.Tip="{loc:Tr DiffResizeTip}"/>
+
+            <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Auto">
               <ItemsControl ItemsSource="{Binding VisibleDiffLines}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="m:DiffLine">
@@ -159,13 +170,27 @@
 
         <TabItem Header="{loc:Tr TabHistory}">
           <DockPanel Margin="6">
-            <TextBlock DockPanel.Dock="Top" Foreground="Gray" FontSize="11" Margin="0,0,0,6"
-                       Text="{loc:Tr HistoryHint}"/>
+            <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,6">
+              <TextBlock Foreground="Gray" FontSize="11" Text="{loc:Tr HistoryHint}"/>
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="{loc:Tr HistRepoFilter}" VerticalAlignment="Center"/>
+                <ComboBox ItemsSource="{Binding RepositoryOptions}"
+                          SelectedItem="{Binding RepositoryFilter}" MinWidth="200"/>
+              </StackPanel>
+            </StackPanel>
             <ListBox ItemsSource="{Binding History}" SelectedItem="{Binding SelectedHistoryEntry}">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="hist:ReviewHistoryEntry">
                   <StackPanel Margin="0,2">
-                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold"/>
+                    <DockPanel>
+                      <Border DockPanel.Dock="Right" Background="#33808080" CornerRadius="4"
+                              Padding="6,1" VerticalAlignment="Center" Margin="6,0,0,0"
+                              IsVisible="{Binding Repository, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Text="{Binding Repository}" FontSize="10"/>
+                      </Border>
+                      <TextBlock Text="{Binding Label}" FontWeight="SemiBold"
+                                 TextTrimming="CharacterEllipsis"/>
+                    </DockPanel>
                     <TextBlock FontSize="11" Foreground="Gray">
                       <Run Text="base:"/><Run Text="{Binding Base}"/>
                       <Run Text="  ·  agent:"/><Run Text="{Binding Agent}"/>

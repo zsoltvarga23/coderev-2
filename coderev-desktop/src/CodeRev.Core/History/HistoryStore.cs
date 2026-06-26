@@ -15,12 +15,29 @@ public sealed record ReviewHistoryEntry
     public string ReviewMarkdown { get; init; } = "";
     public string DiffUnified { get; init; } = "";
 
+    /// <summary>Repository this review ran against — the repo name, or its local
+    /// root folder name when no name is available. Used as a history chip/filter.
+    /// Empty for entries saved before this field existed.</summary>
+    public string Repository { get; init; } = "";
+
     /// <summary>Short label for history lists, e.g. "2026-06-23 15:30 — feature/login".</summary>
     public string Label => $"{Timestamp.LocalDateTime:yyyy-MM-dd HH:mm} — {Branch}";
 
+    /// <summary>Derives a repository display name from a path: the last path
+    /// segment (the folder name), or "" if the path is empty.</summary>
+    public static string RepositoryNameFromPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return "";
+        var trimmed = path.TrimEnd('/', '\\', ' ');
+        var name = Path.GetFileName(trimmed);
+        return string.IsNullOrEmpty(name) ? trimmed : name;
+    }
+
     /// <summary>Creates an entry with a sortable, filesystem-safe id.</summary>
     public static ReviewHistoryEntry Create(string branch, string @base, string agent,
-        string lang, int changedFiles, string reviewMarkdown, string diffUnified)
+        string lang, int changedFiles, string reviewMarkdown, string diffUnified,
+        string repository = "")
     {
         var now = DateTimeOffset.Now;
         var id = now.ToString("yyyyMMdd-HHmmss-fff");
@@ -35,6 +52,7 @@ public sealed record ReviewHistoryEntry
             ChangedFiles = changedFiles,
             ReviewMarkdown = reviewMarkdown,
             DiffUnified = diffUnified,
+            Repository = repository,
         };
     }
 }
