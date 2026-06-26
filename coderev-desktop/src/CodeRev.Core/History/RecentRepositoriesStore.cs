@@ -56,7 +56,7 @@ public sealed class RecentRepositoriesStore
         var entry = new RecentRepository
         {
             Path = full,
-            Name = NameOf(full),
+            Name = ReviewHistoryEntry.RepositoryNameFromPath(full),
             LastOpened = DateTimeOffset.Now,
         };
 
@@ -86,9 +86,11 @@ public sealed class RecentRepositoriesStore
             var list = JsonSerializer.Deserialize<List<RecentRepository>>(File.ReadAllText(_file), Options);
             return list ?? new List<RecentRepository>();
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
         {
-            return new List<RecentRepository>(); // ignore a corrupt file
+            // Corrupt, locked, or inaccessible file — degrade to an empty list
+            // rather than crashing a caller (e.g. the VM constructor).
+            return new List<RecentRepository>();
         }
     }
 
@@ -98,7 +100,7 @@ public sealed class RecentRepositoriesStore
         {
             File.WriteAllText(_file, JsonSerializer.Serialize(list, Options));
         }
-        catch (IOException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             // Best-effort: never fail the app because the MRU list could not be written.
         }
@@ -109,11 +111,5 @@ public sealed class RecentRepositoriesStore
     {
         var full = System.IO.Path.GetFullPath(path.Trim());
         return System.IO.Path.TrimEndingDirectorySeparator(full);
-    }
-
-    private static string NameOf(string normalizedPath)
-    {
-        var name = System.IO.Path.GetFileName(normalizedPath);
-        return string.IsNullOrEmpty(name) ? normalizedPath : name;
     }
 }

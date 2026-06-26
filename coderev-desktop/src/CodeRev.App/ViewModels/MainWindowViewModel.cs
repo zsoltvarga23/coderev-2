@@ -160,7 +160,15 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty] private string _repositoryFilter = "";
 
-    partial void OnRepositoryFilterChanged(string value) => ApplyHistoryFilter();
+    // Suppresses the filter re-apply while RefreshHistory bulk-updates the filter,
+    // so the list is rebuilt exactly once (no flicker / redundant work).
+    private bool _suppressFilterApply;
+
+    partial void OnRepositoryFilterChanged(string value)
+    {
+        if (!_suppressFilterApply)
+            ApplyHistoryFilter();
+    }
 
     [ObservableProperty] private ReviewHistoryEntry? _selectedHistoryEntry;
 
@@ -389,8 +397,12 @@ public partial class MainWindowViewModel : ObservableObject
         foreach (var r in repos)
             RepositoryOptions.Add(r);
 
+        // Reset to "all" if the current filter is gone. Suppress the change
+        // handler's apply during this bulk update so we apply exactly once below.
+        _suppressFilterApply = true;
         if (!RepositoryOptions.Contains(RepositoryFilter))
-            RepositoryFilter = allLabel; // may raise OnRepositoryFilterChanged
+            RepositoryFilter = allLabel;
+        _suppressFilterApply = false;
         ApplyHistoryFilter();
     }
 
@@ -405,7 +417,8 @@ public partial class MainWindowViewModel : ObservableObject
         var allLabel = RepositoryOptions.Count > 0 ? RepositoryOptions[0] : "";
         IEnumerable<ReviewHistoryEntry> view = _allHistory;
         if (!string.IsNullOrEmpty(RepositoryFilter) && RepositoryFilter != allLabel)
-            view = _allHistory.Where(e => RepoLabelOf(e) == RepositoryFilter);
+            view = _allHistory.Where(e =>
+                string.Equals(RepoLabelOf(e), RepositoryFilter, StringComparison.OrdinalIgnoreCase));
 
         History.Clear();
         foreach (var e in view)

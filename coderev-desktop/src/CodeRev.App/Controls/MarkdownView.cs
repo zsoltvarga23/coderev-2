@@ -16,8 +16,6 @@ namespace CodeRev.App.Controls;
 public class MarkdownView : ContentControl
 {
     private static readonly FontFamily Mono = new("Cascadia Code,Consolas,Menlo,monospace");
-    private static readonly IBrush CodeBackground = new SolidColorBrush(Color.FromArgb(0x22, 0x80, 0x80, 0x80));
-    private static readonly IBrush CodeBorder = new SolidColorBrush(Color.FromArgb(0x40, 0x80, 0x80, 0x80));
 
     public static readonly StyledProperty<string?> MarkdownProperty =
         AvaloniaProperty.Register<MarkdownView, string?>(nameof(Markdown));
@@ -41,7 +39,10 @@ public class MarkdownView : ContentControl
         Content = panel;
     }
 
-    private static Control RenderBlock(MarkdownBlock block) => block.Kind switch
+    // Instance (not static) so they can resolve theme-aware brushes from this
+    // control's resource scope via GetResourceObservable — the code colors then
+    // track light/dark like the diff colors do.
+    private Control RenderBlock(MarkdownBlock block) => block.Kind switch
     {
         MarkdownBlockKind.CodeBlock => RenderCodeBlock(block),
         MarkdownBlockKind.Heading => RenderHeading(block),
@@ -49,7 +50,7 @@ public class MarkdownView : ContentControl
         _ => BuildTextBlock(block.Inlines),
     };
 
-    private static Control RenderHeading(MarkdownBlock block)
+    private Control RenderHeading(MarkdownBlock block)
     {
         var tb = BuildTextBlock(block.Inlines);
         tb.FontWeight = FontWeight.Bold;
@@ -58,7 +59,7 @@ public class MarkdownView : ContentControl
         return tb;
     }
 
-    private static Control RenderListItem(MarkdownBlock block)
+    private Control RenderListItem(MarkdownBlock block)
     {
         var prefix = block.Ordered ? $"{block.ListNumber}. " : "•  ";
         var tb = BuildTextBlock(block.Inlines, prefix);
@@ -66,7 +67,7 @@ public class MarkdownView : ContentControl
         return tb;
     }
 
-    private static Control RenderCodeBlock(MarkdownBlock block)
+    private Control RenderCodeBlock(MarkdownBlock block)
     {
         var code = new SelectableTextBlock
         {
@@ -75,10 +76,8 @@ public class MarkdownView : ContentControl
             FontSize = 12.5,
             TextWrapping = TextWrapping.NoWrap,
         };
-        return new Border
+        var border = new Border
         {
-            Background = CodeBackground,
-            BorderBrush = CodeBorder,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             Padding = new Thickness(8, 6),
@@ -89,9 +88,12 @@ public class MarkdownView : ContentControl
                 Content = code,
             },
         };
+        border.Bind(Border.BackgroundProperty, this.GetResourceObservable("CodeBlockBg"));
+        border.Bind(Border.BorderBrushProperty, this.GetResourceObservable("CodeBlockBorder"));
+        return border;
     }
 
-    private static SelectableTextBlock BuildTextBlock(IReadOnlyList<MarkdownInline> inlines, string? prefix = null)
+    private SelectableTextBlock BuildTextBlock(IReadOnlyList<MarkdownInline> inlines, string? prefix = null)
     {
         var tb = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap };
         if (!string.IsNullOrEmpty(prefix))
@@ -101,7 +103,9 @@ public class MarkdownView : ContentControl
         {
             if (inline.Code)
             {
-                tb.Inlines!.Add(new Run(inline.Text) { FontFamily = Mono, Background = CodeBackground });
+                var codeRun = new Run(inline.Text) { FontFamily = Mono };
+                codeRun.Bind(TextElement.BackgroundProperty, this.GetResourceObservable("CodeInlineBg"));
+                tb.Inlines!.Add(codeRun);
             }
             else
             {

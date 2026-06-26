@@ -173,11 +173,11 @@ public static class MarkdownParser
         {
             var c = text[i];
 
-            // Inline code: `code`
+            // Inline code: `code` (require ≥1 char between the backticks)
             if (c == '`')
             {
                 var end = text.IndexOf('`', i + 1);
-                if (end > i)
+                if (end > i + 1)
                 {
                     FlushPlain();
                     runs.Add(new MarkdownInline(text[(i + 1)..end], Code: true));
@@ -185,11 +185,11 @@ public static class MarkdownParser
                     continue;
                 }
             }
-            // Bold: **text**
+            // Bold: **text** (require ≥1 char between the markers)
             else if (c == '*' && i + 1 < text.Length && text[i + 1] == '*')
             {
                 var end = text.IndexOf("**", i + 2, System.StringComparison.Ordinal);
-                if (end > i)
+                if (end > i + 2)
                 {
                     FlushPlain();
                     runs.Add(new MarkdownInline(text[(i + 2)..end], Bold: true));
@@ -197,11 +197,11 @@ public static class MarkdownParser
                     continue;
                 }
             }
-            // Italic: *text* or _text_
+            // Italic: *text* or _text_ (require ≥1 char between the markers)
             else if (c is '*' or '_')
             {
                 var end = text.IndexOf(c, i + 1);
-                if (end > i)
+                if (end > i + 1)
                 {
                     FlushPlain();
                     runs.Add(new MarkdownInline(text[(i + 1)..end], Italic: true));

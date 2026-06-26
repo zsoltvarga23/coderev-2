@@ -2,13 +2,25 @@ using CodeRev.Core.History;
 
 namespace CodeRev.Core.Tests;
 
-public class RecentRepositoriesStoreTests
+public class RecentRepositoriesStoreTests : IDisposable
 {
-    private static RecentRepositoriesStore NewStore(out string file)
+    private readonly List<string> _tempDirs = new();
+
+    private RecentRepositoriesStore NewStore(out string file)
     {
         var dir = Path.Combine(Path.GetTempPath(), "coderev-recent-" + Guid.NewGuid().ToString("N"));
+        _tempDirs.Add(dir);
         file = Path.Combine(dir, "recent.json");
         return new RecentRepositoriesStore(file);
+    }
+
+    public void Dispose()
+    {
+        foreach (var dir in _tempDirs)
+        {
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true); }
+            catch { /* test cleanup is best-effort */ }
+        }
     }
 
     [Fact]
@@ -44,6 +56,9 @@ public class RecentRepositoriesStoreTests
     [Fact]
     public void TrailingSeparatorAndCaseDoNotCreateDuplicates()
     {
+        // De-duplication is intentionally case-insensitive (OrdinalIgnoreCase) on
+        // ALL platforms — even though Linux filesystems are case-sensitive, repo
+        // paths differing only by case are treated as the same entry by design.
         var store = NewStore(out _);
         var p = Path.Combine(Path.GetTempPath(), "RepoX");
         store.Add(p);

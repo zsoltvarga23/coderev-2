@@ -60,6 +60,22 @@ public class MarkdownParserTests
     }
 
     [Fact]
+    public void ParsesUnderscoreItalic()
+    {
+        var runs = MarkdownParser.ParseInlines("an _underscore italic_ run");
+        Assert.Contains(runs, r => r.Italic && r.Text == "underscore italic");
+    }
+
+    [Fact]
+    public void EmptyMarkersProduceNoEmptyRuns()
+    {
+        // ****, __ and `` must not yield empty styled runs.
+        Assert.DoesNotContain(MarkdownParser.ParseInlines("a ** b"), r => r.Bold && r.Text.Length == 0);
+        Assert.DoesNotContain(MarkdownParser.ParseInlines("a **** b"), r => r.Text.Length == 0);
+        Assert.DoesNotContain(MarkdownParser.ParseInlines("a `` b"), r => r.Code && r.Text.Length == 0);
+    }
+
+    [Fact]
     public void UnterminatedMarkerIsLiteral()
     {
         var runs = MarkdownParser.ParseInlines("a * b without close");
