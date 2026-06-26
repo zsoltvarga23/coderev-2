@@ -46,7 +46,21 @@
           <DockPanel Grid.Row="0" Grid.Column="1" Margin="0,0,8,4">
             <Button DockPanel.Dock="Right" Content="📂" Click="OnBrowseRepo" Margin="6,0,0,0"
                     ToolTip.Tip="{loc:Tr BrowseTip}"/>
-            <TextBox Watermark="{loc:Tr RepoWatermark}" Text="{Binding RepositoryPath}"/>
+            <AutoCompleteBox Watermark="{loc:Tr RepoWatermark}" Text="{Binding RepositoryPath}"
+                             ItemsSource="{Binding RecentRepositories}"
+                             ValueMemberBinding="{Binding Path}"
+                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
+                             IsTextCompletionEnabled="False">
+              <AutoCompleteBox.ItemTemplate>
+                <DataTemplate x:DataType="hist:RecentRepository">
+                  <StackPanel Margin="0,1">
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Path}" FontSize="10" Foreground="Gray"
+                               TextTrimming="CharacterEllipsis"/>
+                  </StackPanel>
+                </DataTemplate>
+              </AutoCompleteBox.ItemTemplate>
+            </AutoCompleteBox>
           </DockPanel>
           <TextBlock Grid.Row="0" Grid.Column="2" Text="{loc:Tr BranchLabel}" VerticalAlignment="Center" Margin="0,0,8,4"/>
           <AutoCompleteBox Grid.Row="0" Grid.Column="3" Width="200" Watermark="feature/x"

@@ -23,6 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly ICoderevRunner _runner;
     private readonly HistoryStore _history;
+    private readonly RecentRepositoriesStore _recentStore;
     private readonly Dictionary<int, StepViewModel> _stepById = new();
     private CancellationTokenSource? _cts;
     private string _lastDiffUnified = "";
@@ -30,11 +31,14 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel() : this(new CoderevRunner(), new HistoryStore()) { }
 
-    public MainWindowViewModel(ICoderevRunner runner, HistoryStore? history = null)
+    public MainWindowViewModel(ICoderevRunner runner, HistoryStore? history = null,
+        RecentRepositoriesStore? recent = null)
     {
         _runner = runner;
         _history = history ?? new HistoryStore();
+        _recentStore = recent ?? new RecentRepositoriesStore();
         RefreshHistory();
+        LoadRecentRepositories();
     }
 
     [ObservableProperty] private string _repositoryPath = "";
@@ -42,6 +46,22 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Local branches of the current repo, for branch autocomplete.</summary>
     public ObservableCollection<string> Branches { get; } = new();
+
+    /// <summary>Recently opened repositories, newest first, for repo autocomplete.</summary>
+    public ObservableCollection<RecentRepository> RecentRepositories { get; } = new();
+
+    private void LoadRecentRepositories()
+    {
+        RecentRepositories.Clear();
+        foreach (var r in _recentStore.List())
+            RecentRepositories.Add(r);
+    }
+
+    private void RememberRepository(string path)
+    {
+        try { _recentStore.Add(path); }
+        catch { /* MRU list is best-effort; never disrupt the user */ }
+    }
 
     private CancellationTokenSource? _branchCts;
 
@@ -69,11 +89,17 @@ public partial class MainWindowViewModel : ObservableObject
         if (ct.IsCancellationRequested)
             return;
 
+        // A confirmed git repo gets remembered for the recent-repos autocomplete.
+        if (isRepo)
+            RememberRepository(path);
+
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
             Branches.Clear();
             foreach (var b in branches)
                 Branches.Add(b);
+            if (isRepo)
+                LoadRecentRepositories();
             ImportRepoConfig();
             var note = CoderevConfig.Exists(path) ? Loc.Instance.T("StConfigImported") : "";
             StatusText = isRepo
