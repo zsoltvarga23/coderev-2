@@ -46,6 +46,9 @@
       <!-- Bundled icon font: a subset of Tabler Icons (MIT). Glyph constants in
            Controls/Icons.cs. -->
       <FontFamily x:Key="IconFont">avares://CodeRev.App/Assets/coderev-icons.ttf#tabler-icons</FontFamily>
+
+      <!-- Rounder corners on inputs/buttons across the app (matches the design). -->
+      <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
     </ResourceDictionary>
   </Application.Resources>
 
@@ -68,6 +71,17 @@
     <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource AppAccentHover}"/>
       <Setter Property="TextBlock.Foreground" Value="#FFFFFF"/>
+    </Style>
+
+    <!-- Icon-only toolbar button: square, flat, subtle hover. -->
+    <Style Selector="Button.iconbtn">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="8"/>
+      <Setter Property="MinWidth" Value="0"/>
+    </Style>
+    <Style Selector="Button.iconbtn:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#22808080"/>
     </Style>
   </Application.Styles>
 </Application>

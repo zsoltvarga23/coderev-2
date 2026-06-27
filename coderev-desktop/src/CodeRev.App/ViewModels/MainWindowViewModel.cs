@@ -147,9 +147,6 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private string _reviewText = "";
     [ObservableProperty] private bool _hasSections;
 
-    /// <summary>Engine version reported by the last run (shown in the status bar).</summary>
-    [ObservableProperty] private string _engineVersion = "";
-
     /// <summary>True once a diff has been loaded (drives the diff empty-state).</summary>
     [ObservableProperty] private bool _hasDiff;
 
@@ -303,7 +300,6 @@ public partial class MainWindowViewModel : ObservableObject
         switch (ev.Type)
         {
             case EventType.RunStart:
-                EngineVersion = ev.Version ?? "";
                 StatusText = Loc.Instance.T("StReviewOf", ev.Branch ?? "", ev.Base ?? "");
                 break;
 
