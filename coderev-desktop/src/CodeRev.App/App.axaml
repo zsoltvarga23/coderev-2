@@ -18,12 +18,21 @@
           <SolidColorBrush x:Key="CodeBlockBg" Color="#0F000000"/>
           <SolidColorBrush x:Key="CodeBlockBorder" Color="#25000000"/>
           <SolidColorBrush x:Key="CodeInlineBg" Color="#14000000"/>
-          <!-- Brand accent for primary actions. -->
-          <SolidColorBrush x:Key="AppAccent" Color="#534AB7"/>
-          <SolidColorBrush x:Key="AppAccentHover" Color="#453D9E"/>
+          <!-- Brand/primary accent (green). -->
+          <SolidColorBrush x:Key="AppAccent" Color="#2DA44E"/>
+          <SolidColorBrush x:Key="AppAccentHover" Color="#278C42"/>
+          <!-- Selected tab pill: a calmer green so it isn't garish. -->
+          <SolidColorBrush x:Key="TabSelectedBg" Color="#3C9A6A"/>
+          <!-- Subtle background for unselected tab pills (visible on light). -->
+          <SolidColorBrush x:Key="TabPillBg" Color="#14000000"/>
+          <!-- Stop / destructive action. -->
+          <SolidColorBrush x:Key="AppDanger" Color="#CB2431"/>
+          <SolidColorBrush x:Key="AppDangerHover" Color="#A81F2B"/>
           <!-- Step status colours. -->
+          <SolidColorBrush x:Key="StepRunning" Color="#378ADD"/>
           <SolidColorBrush x:Key="StepDone" Color="#2EA043"/>
           <SolidColorBrush x:Key="StepFailed" Color="#CB2431"/>
+          <SolidColorBrush x:Key="StepCancelled" Color="#888780"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="DiffAddedBg" Color="#553FB950"/>
@@ -34,12 +43,18 @@
           <SolidColorBrush x:Key="CodeBlockBg" Color="#1FFFFFFF"/>
           <SolidColorBrush x:Key="CodeBlockBorder" Color="#33FFFFFF"/>
           <SolidColorBrush x:Key="CodeInlineBg" Color="#1FFFFFFF"/>
-          <!-- Brand accent, lifted a little so it reads on the dark canvas. -->
-          <SolidColorBrush x:Key="AppAccent" Color="#7A71E0"/>
-          <SolidColorBrush x:Key="AppAccentHover" Color="#8C84E8"/>
+          <!-- Brand/primary accent (green), lifted for the dark canvas. -->
+          <SolidColorBrush x:Key="AppAccent" Color="#3FB950"/>
+          <SolidColorBrush x:Key="AppAccentHover" Color="#54C268"/>
+          <SolidColorBrush x:Key="TabSelectedBg" Color="#46A876"/>
+          <SolidColorBrush x:Key="TabPillBg" Color="#18FFFFFF"/>
+          <SolidColorBrush x:Key="AppDanger" Color="#F85149"/>
+          <SolidColorBrush x:Key="AppDangerHover" Color="#FA6B63"/>
           <!-- Step status colours (brighter for the dark canvas). -->
+          <SolidColorBrush x:Key="StepRunning" Color="#5BA3E8"/>
           <SolidColorBrush x:Key="StepDone" Color="#3FB950"/>
           <SolidColorBrush x:Key="StepFailed" Color="#F85149"/>
+          <SolidColorBrush x:Key="StepCancelled" Color="#9C9A92"/>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
 
@@ -70,6 +85,17 @@
     </Style>
     <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource AppAccentHover}"/>
+      <Setter Property="TextBlock.Foreground" Value="#FFFFFF"/>
+    </Style>
+
+    <!-- Destructive (Stop) button: red when enabled, dims when disabled. -->
+    <Style Selector="Button.danger:not(:disabled)">
+      <Setter Property="Background" Value="{DynamicResource AppDanger}"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="Button.danger:not(:disabled):pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppDangerHover}"/>
       <Setter Property="TextBlock.Foreground" Value="#FFFFFF"/>
     </Style>
 

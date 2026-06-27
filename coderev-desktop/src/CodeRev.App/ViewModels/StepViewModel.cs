@@ -4,7 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace CodeRev.App.ViewModels;
 
 /// <summary>Lifecycle state of a pipeline step, driving its icon and colour.</summary>
-public enum StepState { Running, Done, Failed }
+public enum StepState { Running, Done, Failed, Cancelled }
 
 /// <summary>Observable view of one pipeline step in the progress list.</summary>
 public partial class StepViewModel : ObservableObject
@@ -20,6 +20,7 @@ public partial class StepViewModel : ObservableObject
     {
         StepState.Done => Icons.CircleCheck,
         StepState.Failed => Icons.CircleX,
+        StepState.Cancelled => Icons.CircleX,
         _ => Icons.Loader2,
     };
 
@@ -27,6 +28,7 @@ public partial class StepViewModel : ObservableObject
     public bool IsRunning => State == StepState.Running;
     public bool IsDone => State == StepState.Done;
     public bool IsFailed => State == StepState.Failed;
+    public bool IsCancelled => State == StepState.Cancelled;
 
     partial void OnStateChanged(StepState value)
     {
@@ -34,6 +36,15 @@ public partial class StepViewModel : ObservableObject
         OnPropertyChanged(nameof(IsRunning));
         OnPropertyChanged(nameof(IsDone));
         OnPropertyChanged(nameof(IsFailed));
+        OnPropertyChanged(nameof(IsCancelled));
+    }
+
+    /// <summary>Marks a still-running step as cancelled (stops the spinner) when
+    /// the user hits Stop.</summary>
+    public void MarkCancelled()
+    {
+        if (State == StepState.Running)
+            State = StepState.Cancelled;
     }
 
     public void MarkDone(long? durationMs)

@@ -272,6 +272,9 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
+            // Stop pressed: end the spinner on whatever step was still running.
+            foreach (var s in Steps)
+                s.MarkCancelled();
             StatusText = Loc.Instance.T("StCancelled");
         }
         catch (Exception ex)

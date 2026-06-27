@@ -19,12 +19,12 @@
     <!-- Segmented-control look for the main tabs: pill segments, the selected one
          filled with the accent. Replaces the default underline tab header. -->
     <ControlTheme x:Key="{x:Type TabItem}" TargetType="TabItem">
-      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
       <Setter Property="FontSize" Value="13"/>
       <Setter Property="Padding" Value="16,7"/>
       <Setter Property="Template">
         <ControlTemplate>
-          <Border Name="PART_Pill" Background="Transparent" CornerRadius="8" Margin="0,0,4,0">
+          <Border Name="PART_Pill" Background="{DynamicResource TabPillBg}" CornerRadius="8" Margin="0,0,4,0">
             <ContentPresenter Name="PART_ContentPresenter"
                               Content="{TemplateBinding Header}"
                               ContentTemplate="{TemplateBinding HeaderTemplate}"
@@ -34,10 +34,10 @@
         </ControlTemplate>
       </Setter>
       <Style Selector="^:pointerover /template/ Border#PART_Pill">
-        <Setter Property="Background" Value="#22808080"/>
+        <Setter Property="Background" Value="#28808080"/>
       </Style>
       <Style Selector="^:selected /template/ Border#PART_Pill">
-        <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+        <Setter Property="Background" Value="{DynamicResource TabSelectedBg}"/>
       </Style>
       <Style Selector="^:selected">
         <Setter Property="Foreground" Value="#FFFFFF"/>
@@ -63,13 +63,16 @@
 
     <!-- Step status icon colours. -->
     <Style Selector="TextBlock.stepRunning">
-      <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+      <Setter Property="Foreground" Value="{DynamicResource StepRunning}"/>
     </Style>
     <Style Selector="TextBlock.stepDone">
       <Setter Property="Foreground" Value="{DynamicResource StepDone}"/>
     </Style>
     <Style Selector="TextBlock.stepFailed">
       <Setter Property="Foreground" Value="{DynamicResource StepFailed}"/>
+    </Style>
+    <Style Selector="TextBlock.stepCancelled">
+      <Setter Property="Foreground" Value="{DynamicResource StepCancelled}"/>
     </Style>
 
     <!-- Centered empty-state placeholder. -->
@@ -151,7 +154,6 @@
             <ComboBox ItemsSource="{Binding AgentOptions}" SelectedItem="{Binding Agent}" Width="150"/>
             <TextBlock Text="{loc:Tr ReviewLangLabel}" VerticalAlignment="Center"/>
             <ComboBox ItemsSource="{Binding LangOptions}" SelectedItem="{Binding Lang}" Width="150"/>
-            <CheckBox Content="{loc:Tr DryRun}" IsChecked="{Binding DryRun}"/>
           </StackPanel>
         </Grid>
 
@@ -170,14 +172,16 @@
               </StackPanel>
             </Button>
           </StackPanel>
-          <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+          <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <ToggleSwitch IsChecked="{Binding DryRun}" VerticalAlignment="Center"
+                          OnContent="{loc:Tr DryRun}" OffContent="{loc:Tr DryRun}"/>
             <Button Classes="accent" Command="{Binding RunCommand}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.PlayerPlay}"/>
                 <TextBlock Text="{loc:Tr RunBtn}"/>
               </StackPanel>
             </Button>
-            <Button Command="{Binding StopCommand}">
+            <Button Classes="danger" Command="{Binding StopCommand}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.PlayerStop}"/>
                 <TextBlock Text="{loc:Tr StopBtn}"/>
@@ -205,7 +209,8 @@
                              Text="{Binding Icon}"
                              Classes.stepRunning="{Binding IsRunning}"
                              Classes.stepDone="{Binding IsDone}"
-                             Classes.stepFailed="{Binding IsFailed}"/>
+                             Classes.stepFailed="{Binding IsFailed}"
+                             Classes.stepCancelled="{Binding IsCancelled}"/>
                   <StackPanel Grid.Column="1">
                     <TextBlock Text="{Binding Label}"/>
                     <TextBlock Text="{Binding Detail}" Foreground="Gray" FontSize="11"
