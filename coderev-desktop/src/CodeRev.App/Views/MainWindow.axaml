@@ -70,7 +70,7 @@
          live (a static spinner glyph would look broken). -->
     <Style Selector="TextBlock.stepRunning">
       <Setter Property="Foreground" Value="{DynamicResource StepRunning}"/>
-      <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+      <Setter Property="RenderTransformOrigin" Value="50%,50%"/>
       <Setter Property="RenderTransform" Value="rotate(0)"/>
       <Style.Animations>
         <Animation Duration="0:0:0.9" IterationCount="INFINITE">
@@ -219,12 +219,14 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:StepViewModel">
                 <Grid ColumnDefinitions="Auto,*" Margin="0,4">
-                  <TextBlock Grid.Column="0" Classes="icon" Width="22" Margin="0,1,0,0"
-                             Text="{Binding Icon}"
-                             Classes.stepRunning="{Binding IsRunning}"
-                             Classes.stepDone="{Binding IsDone}"
-                             Classes.stepFailed="{Binding IsFailed}"
-                             Classes.stepCancelled="{Binding IsCancelled}"/>
+                  <Border Grid.Column="0" Width="22" Height="20" Margin="0,1,0,0">
+                    <TextBlock Classes="icon" Text="{Binding Icon}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Classes.stepRunning="{Binding IsRunning}"
+                               Classes.stepDone="{Binding IsDone}"
+                               Classes.stepFailed="{Binding IsFailed}"
+                               Classes.stepCancelled="{Binding IsCancelled}"/>
+                  </Border>
                   <StackPanel Grid.Column="1">
                     <TextBlock Text="{Binding Label}"/>
                     <TextBlock Text="{Binding Detail}" Foreground="Gray" FontSize="11"
