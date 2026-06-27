@@ -21,6 +21,9 @@
           <!-- Brand accent for primary actions. -->
           <SolidColorBrush x:Key="AppAccent" Color="#534AB7"/>
           <SolidColorBrush x:Key="AppAccentHover" Color="#453D9E"/>
+          <!-- Step status colours. -->
+          <SolidColorBrush x:Key="StepDone" Color="#2EA043"/>
+          <SolidColorBrush x:Key="StepFailed" Color="#CB2431"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="DiffAddedBg" Color="#553FB950"/>
@@ -34,6 +37,9 @@
           <!-- Brand accent, lifted a little so it reads on the dark canvas. -->
           <SolidColorBrush x:Key="AppAccent" Color="#7A71E0"/>
           <SolidColorBrush x:Key="AppAccentHover" Color="#8C84E8"/>
+          <!-- Step status colours (brighter for the dark canvas). -->
+          <SolidColorBrush x:Key="StepDone" Color="#3FB950"/>
+          <SolidColorBrush x:Key="StepFailed" Color="#F85149"/>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
 
@@ -51,7 +57,6 @@
       <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
       <Setter Property="FontSize" Value="16"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
-      <Setter Property="LineHeight" Value="16"/>
     </Style>
 
     <!-- Primary (accent) button: filled brand colour, white text. -->

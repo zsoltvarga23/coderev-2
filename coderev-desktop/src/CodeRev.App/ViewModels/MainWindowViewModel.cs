@@ -147,6 +147,18 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private string _reviewText = "";
     [ObservableProperty] private bool _hasSections;
 
+    /// <summary>Engine version reported by the last run (shown in the status bar).</summary>
+    [ObservableProperty] private string _engineVersion = "";
+
+    /// <summary>True once a diff has been loaded (drives the diff empty-state).</summary>
+    [ObservableProperty] private bool _hasDiff;
+
+    /// <summary>Whether to show the "run a review" placeholder in the Review tab.</summary>
+    public bool ShowReviewPlaceholder => !HasSections && string.IsNullOrWhiteSpace(ReviewText);
+
+    partial void OnHasSectionsChanged(bool value) => OnPropertyChanged(nameof(ShowReviewPlaceholder));
+    partial void OnReviewTextChanged(string value) => OnPropertyChanged(nameof(ShowReviewPlaceholder));
+
     public ObservableCollection<StepViewModel> Steps { get; } = new();
     public ObservableCollection<string> Log { get; } = new();
 
@@ -236,6 +248,7 @@ public partial class MainWindowViewModel : ObservableObject
         VisibleDiffLines.Clear();
         ReviewSections.Clear();
         HasSections = false;
+        HasDiff = false;
         ReviewText = MetaText = "";
         IsRunning = true;
         StatusText = Loc.Instance.T("StRunning");
@@ -290,6 +303,7 @@ public partial class MainWindowViewModel : ObservableObject
         switch (ev.Type)
         {
             case EventType.RunStart:
+                EngineVersion = ev.Version ?? "";
                 StatusText = Loc.Instance.T("StReviewOf", ev.Branch ?? "", ev.Base ?? "");
                 break;
 
@@ -325,6 +339,7 @@ public partial class MainWindowViewModel : ObservableObject
                 DiffFiles.Clear();
                 foreach (var f in DiffParser.Parse(ev.Unified))
                     DiffFiles.Add(f);
+                HasDiff = DiffFiles.Count > 0;
                 SelectedDiffFile = null; // show all files
                 RefreshVisibleDiff();
                 break;
@@ -437,6 +452,7 @@ public partial class MainWindowViewModel : ObservableObject
         DiffFiles.Clear();
         foreach (var f in DiffParser.Parse(e.DiffUnified))
             DiffFiles.Add(f);
+        HasDiff = DiffFiles.Count > 0;
         SelectedDiffFile = null;
         RefreshVisibleDiff();
 

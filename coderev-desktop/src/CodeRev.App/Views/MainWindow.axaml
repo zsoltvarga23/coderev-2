@@ -32,6 +32,41 @@
     <Style Selector="Border.diffMeta">
       <Setter Property="Background" Value="{DynamicResource DiffMetaBg}"/>
     </Style>
+
+    <!-- Step status icon colours. -->
+    <Style Selector="TextBlock.stepRunning">
+      <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+    </Style>
+    <Style Selector="TextBlock.stepDone">
+      <Setter Property="Foreground" Value="{DynamicResource StepDone}"/>
+    </Style>
+    <Style Selector="TextBlock.stepFailed">
+      <Setter Property="Foreground" Value="{DynamicResource StepFailed}"/>
+    </Style>
+
+    <!-- Cleaner tab headers with an accent selection colour. -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="MinHeight" Value="0"/>
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="{DynamicResource AppAccent}"/>
+    </Style>
+
+    <!-- Vertical separator between toolbar button groups. -->
+    <Style Selector="Border.vsep">
+      <Setter Property="Width" Value="1"/>
+      <Setter Property="Margin" Value="3,4"/>
+      <Setter Property="Background" Value="#33888888"/>
+    </Style>
+
+    <!-- Centered empty-state placeholder. -->
+    <Style Selector="StackPanel.placeholder">
+      <Setter Property="HorizontalAlignment" Value="Center"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Spacing" Value="8"/>
+    </Style>
   </Window.Styles>
 
   <Grid RowDefinitions="Auto,*,Auto" Margin="12">
@@ -96,6 +131,7 @@
                 <TextBlock Text="{loc:Tr SettingsBtn}"/>
               </StackPanel>
             </Button>
+            <Border Classes="vsep"/>
             <Button Click="OnExportMarkdown" ToolTip.Tip="{loc:Tr ExportMdTip}">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.FileDownload}"/>
@@ -108,6 +144,7 @@
                 <TextBlock Text=".html"/>
               </StackPanel>
             </Button>
+            <Border Classes="vsep"/>
             <Button Click="OnToggleTheme">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.SunMoon}"/>
@@ -120,6 +157,7 @@
                 <TextBlock Text="{loc:Tr UiLangToggle}"/>
               </StackPanel>
             </Button>
+            <Border Classes="vsep" IsVisible="{Binding UpdateAvailable}"/>
             <Button Click="OnUpdate" IsVisible="{Binding UpdateAvailable}"
                     ToolTip.Tip="{Binding UpdateTipText}">
               <StackPanel Orientation="Horizontal" Spacing="6">
@@ -158,8 +196,12 @@
           <ItemsControl ItemsSource="{Binding Steps}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:StepViewModel">
-                <Grid ColumnDefinitions="Auto,*" Margin="0,3">
-                  <TextBlock Grid.Column="0" Text="{Binding Glyph}" Width="20"/>
+                <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+                  <TextBlock Grid.Column="0" Classes="icon" Width="22" Margin="0,1,0,0"
+                             Text="{Binding Icon}"
+                             Classes.stepRunning="{Binding IsRunning}"
+                             Classes.stepDone="{Binding IsDone}"
+                             Classes.stepFailed="{Binding IsFailed}"/>
                   <StackPanel Grid.Column="1">
                     <TextBlock Text="{Binding Label}"/>
                     <TextBlock Text="{Binding Detail}" Foreground="Gray" FontSize="11"
@@ -175,32 +217,43 @@
       <TabControl Grid.Column="1">
         <!-- Review: color-coded, sectioned cards (falls back to raw stream) -->
         <TabItem Header="{loc:Tr TabReview}">
-          <ScrollViewer>
-            <StackPanel Margin="6">
-              <ItemsControl ItemsSource="{Binding ReviewSections}" IsVisible="{Binding HasSections}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="m:ReviewSection">
-                    <Border Margin="0,0,0,8" CornerRadius="6" BorderThickness="1" BorderBrush="#22808080">
-                      <StackPanel>
-                        <Border Background="{Binding Severity, Converter={StaticResource SevBg}}"
-                                Padding="8,4" CornerRadius="6,6,0,0">
-                          <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="Bold"/>
-                        </Border>
-                        <ctrl:MarkdownView Markdown="{Binding Body}" Margin="10"/>
-                      </StackPanel>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-              <SelectableTextBlock Text="{Binding ReviewText}" IsVisible="{Binding !HasSections}"
-                                   FontFamily="Cascadia Code,Consolas,monospace" TextWrapping="Wrap"/>
+          <Grid>
+            <ScrollViewer>
+              <StackPanel Margin="6">
+                <ItemsControl ItemsSource="{Binding ReviewSections}" IsVisible="{Binding HasSections}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="m:ReviewSection">
+                      <Border Margin="0,0,0,8" CornerRadius="6" BorderThickness="1" BorderBrush="#22808080">
+                        <StackPanel>
+                          <Border Background="{Binding Severity, Converter={StaticResource SevBg}}"
+                                  Padding="8,4" CornerRadius="6,6,0,0">
+                            <TextBlock Text="{Binding Title}" Foreground="White" FontWeight="Bold"/>
+                          </Border>
+                          <ctrl:MarkdownView Markdown="{Binding Body}" Margin="10"/>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <SelectableTextBlock Text="{Binding ReviewText}" IsVisible="{Binding !HasSections}"
+                                     FontFamily="Cascadia Code,Consolas,monospace" TextWrapping="Wrap"/>
+              </StackPanel>
+            </ScrollViewer>
+            <StackPanel Classes="placeholder" IsVisible="{Binding ShowReviewPlaceholder}">
+              <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.GitPullRequest}" FontSize="44"
+                         Foreground="Gray" HorizontalAlignment="Center"/>
+              <TextBlock Text="{loc:Tr ReviewEmptyTitle}" FontSize="15" FontWeight="Medium"
+                         HorizontalAlignment="Center"/>
+              <TextBlock Text="{loc:Tr ReviewEmptyHint}" Foreground="Gray" TextAlignment="Center"
+                         TextWrapping="Wrap" MaxWidth="320"/>
             </StackPanel>
-          </ScrollViewer>
+          </Grid>
         </TabItem>
 
         <!-- Diff: file sidebar + colored, line-numbered rows -->
         <TabItem Header="{loc:Tr TabDiff}">
           <Grid>
+            <Grid IsVisible="{Binding HasDiff}">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="210" MinWidth="120"/>
               <ColumnDefinition Width="Auto"/>
@@ -251,6 +304,15 @@
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
             </ScrollViewer>
+            </Grid>
+            <StackPanel Classes="placeholder" IsVisible="{Binding !HasDiff}">
+              <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.FileDiff}" FontSize="44"
+                         Foreground="Gray" HorizontalAlignment="Center"/>
+              <TextBlock Text="{loc:Tr DiffEmptyTitle}" FontSize="15" FontWeight="Medium"
+                         HorizontalAlignment="Center"/>
+              <TextBlock Text="{loc:Tr DiffEmptyHint}" Foreground="Gray" TextAlignment="Center"
+                         TextWrapping="Wrap" MaxWidth="320"/>
+            </StackPanel>
           </Grid>
         </TabItem>
 
@@ -302,8 +364,14 @@
             Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
             CornerRadius="6">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Right" Text="{Binding AppVersion}" Foreground="Gray" Margin="12,0,0,0"/>
-        <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis"/>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" Margin="12,0,0,0">
+          <TextBlock Foreground="Gray"
+                     IsVisible="{Binding EngineVersion, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <Run Text="{loc:Tr EngineLabel}"/><Run Text=" "/><Run Text="{Binding EngineVersion}"/>
+          </TextBlock>
+          <TextBlock Text="{Binding AppVersion}" Foreground="Gray"/>
+        </StackPanel>
+        <TextBlock Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
       </DockPanel>
     </Border>
   </Grid>
