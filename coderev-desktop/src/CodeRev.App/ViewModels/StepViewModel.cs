@@ -19,7 +19,7 @@ public partial class StepViewModel : ObservableObject
     public string Icon => State switch
     {
         StepState.Done => Icons.CircleCheck,
-        StepState.Failed => Icons.CircleX,
+        StepState.Failed => Icons.AlertTriangle,
         StepState.Cancelled => Icons.CircleX,
         _ => Icons.Loader2,
     };

@@ -16,7 +16,9 @@ import urllib.request
 from fontTools import subset
 from fontTools.ttLib import TTFont
 
-TABLER = "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist"
+# Pinned to an exact version so regeneration is reproducible (the bundled font
+# and codepoints match this release). Bump deliberately.
+TABLER = "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.44.0/dist"
 
 # Icons used across the app (Tabler outline names).
 ICONS = [
@@ -35,7 +37,7 @@ CS_OUT = os.path.join(APP, "Controls", "Icons.cs")
 
 
 def fetch(url):
-    with urllib.request.urlopen(url) as r:
+    with urllib.request.urlopen(url, timeout=30) as r:
         return r.read()
 
 
@@ -46,7 +48,8 @@ def codepoints(css_text):
         if s.startswith(".ti-") and ":before" in s:
             cur = s[4:s.index(":before")]
         elif cur and "content:" in s:
-            m = re.search(r'content:\s*"\\([0-9a-fA-F]+)"', s)
+            # Tabler uses double-quoted values today; tolerate single quotes too.
+            m = re.search(r"""content:\s*["']\\([0-9a-fA-F]+)["']""", s)
             if m:
                 pairs[cur] = m.group(1)
             cur = None

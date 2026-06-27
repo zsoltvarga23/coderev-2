@@ -33,6 +33,13 @@
           <SolidColorBrush x:Key="StepDone" Color="#2EA043"/>
           <SolidColorBrush x:Key="StepFailed" Color="#CB2431"/>
           <SolidColorBrush x:Key="StepCancelled" Color="#888780"/>
+          <!-- ToggleSwitch "on" state recoloured to the app green (dry-run). -->
+          <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#2DA44E"/>
+          <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#278C42"/>
+          <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#278C42"/>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#2DA44E"/>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#278C42"/>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#278C42"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="DiffAddedBg" Color="#553FB950"/>
@@ -55,6 +62,13 @@
           <SolidColorBrush x:Key="StepDone" Color="#3FB950"/>
           <SolidColorBrush x:Key="StepFailed" Color="#F85149"/>
           <SolidColorBrush x:Key="StepCancelled" Color="#9C9A92"/>
+          <!-- ToggleSwitch "on" state, brighter green for the dark canvas. -->
+          <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#3FB950"/>
+          <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#54C268"/>
+          <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#54C268"/>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#3FB950"/>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#54C268"/>
+          <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#54C268"/>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
 
@@ -64,15 +78,6 @@
 
       <!-- Rounder corners on inputs/buttons across the app (matches the design). -->
       <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
-
-      <!-- Recolour the ToggleSwitch "on" state from the system blue to the
-           app's green (used by the dry-run switch). -->
-      <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#2DA44E"/>
-      <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#278C42"/>
-      <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#278C42"/>
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#2DA44E"/>
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#278C42"/>
-      <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#278C42"/>
     </ResourceDictionary>
   </Application.Resources>
 
@@ -88,18 +93,18 @@
 
     <!-- Primary (accent) button: filled green in every state. Target the
          ContentPresenter directly so it overrides Fluent's per-state fills. -->
-    <Style Selector="Button.accent">
+    <Style Selector="Button.accent:not(:disabled)">
       <Setter Property="Foreground" Value="#FFFFFF"/>
       <Setter Property="BorderThickness" Value="0"/>
     </Style>
-    <Style Selector="Button.accent /template/ ContentPresenter">
+    <Style Selector="Button.accent:not(:disabled) /template/ ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
       <Setter Property="TextBlock.Foreground" Value="#FFFFFF"/>
     </Style>
-    <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
+    <Style Selector="Button.accent:not(:disabled):pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource AppAccentHover}"/>
     </Style>
-    <Style Selector="Button.accent:pressed /template/ ContentPresenter">
+    <Style Selector="Button.accent:not(:disabled):pressed /template/ ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource AppAccentHover}"/>
     </Style>
 
