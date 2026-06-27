@@ -23,7 +23,7 @@ import (
 
 // version is overridable at build time via -ldflags "-X main.version=...".
 // Keep in sync with the repo-root VERSION file (CI injects it at build time).
-var version = "1.1.0"
+var version = "1.2.0"
 
 func main() {
 	os.Exit(run())
