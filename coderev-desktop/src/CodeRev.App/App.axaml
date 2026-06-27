@@ -18,6 +18,9 @@
           <SolidColorBrush x:Key="CodeBlockBg" Color="#0F000000"/>
           <SolidColorBrush x:Key="CodeBlockBorder" Color="#25000000"/>
           <SolidColorBrush x:Key="CodeInlineBg" Color="#14000000"/>
+          <!-- Brand accent for primary actions. -->
+          <SolidColorBrush x:Key="AppAccent" Color="#534AB7"/>
+          <SolidColorBrush x:Key="AppAccentHover" Color="#453D9E"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="DiffAddedBg" Color="#553FB950"/>
@@ -28,11 +31,38 @@
           <SolidColorBrush x:Key="CodeBlockBg" Color="#1FFFFFFF"/>
           <SolidColorBrush x:Key="CodeBlockBorder" Color="#33FFFFFF"/>
           <SolidColorBrush x:Key="CodeInlineBg" Color="#1FFFFFFF"/>
+          <!-- Brand accent, lifted a little so it reads on the dark canvas. -->
+          <SolidColorBrush x:Key="AppAccent" Color="#7A71E0"/>
+          <SolidColorBrush x:Key="AppAccentHover" Color="#8C84E8"/>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+
+      <!-- Bundled icon font: a subset of Tabler Icons (MIT). Glyph constants in
+           Controls/Icons.cs. -->
+      <FontFamily x:Key="IconFont">avares://CodeRev.App/Assets/coderev-icons.ttf#tabler-icons</FontFamily>
     </ResourceDictionary>
   </Application.Resources>
+
   <Application.Styles>
     <FluentTheme />
+
+    <!-- Icon glyphs rendered from the bundled font. -->
+    <Style Selector="TextBlock.icon">
+      <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="LineHeight" Value="16"/>
+    </Style>
+
+    <!-- Primary (accent) button: filled brand colour, white text. -->
+    <Style Selector="Button.accent">
+      <Setter Property="Background" Value="{DynamicResource AppAccent}"/>
+      <Setter Property="Foreground" Value="#FFFFFF"/>
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppAccentHover}"/>
+      <Setter Property="TextBlock.Foreground" Value="#FFFFFF"/>
+    </Style>
   </Application.Styles>
 </Application>

@@ -44,8 +44,10 @@
         <Grid ColumnDefinitions="Auto,*,Auto,Auto" RowDefinitions="Auto,Auto">
           <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Tr RepoLabel}" VerticalAlignment="Center" Margin="0,0,8,4"/>
           <DockPanel Grid.Row="0" Grid.Column="1" Margin="0,0,8,4">
-            <Button DockPanel.Dock="Right" Content="📂" Click="OnBrowseRepo" Margin="6,0,0,0"
-                    ToolTip.Tip="{loc:Tr BrowseTip}"/>
+            <Button DockPanel.Dock="Right" Click="OnBrowseRepo" Margin="6,0,0,0"
+                    ToolTip.Tip="{loc:Tr BrowseTip}">
+              <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.Folder}"/>
+            </Button>
             <AutoCompleteBox Watermark="{loc:Tr RepoWatermark}" Text="{Binding RepositoryPath}"
                              ItemsSource="{Binding RecentRepositories}"
                              ValueMemberBinding="{Binding Path}"
@@ -82,19 +84,63 @@
 
         <DockPanel>
           <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
-            <Button Content="{loc:Tr InfoBtn}" Click="OnOpenAbout"/>
-            <Button Content="{loc:Tr SettingsBtn}" Click="OnOpenConfigEditor"/>
-            <Button Content="⤓ .md" Click="OnExportMarkdown" ToolTip.Tip="{loc:Tr ExportMdTip}"/>
-            <Button Content="⤓ .html" Click="OnExportHtml" ToolTip.Tip="{loc:Tr ExportHtmlTip}"/>
-            <Button Content="{loc:Tr ThemeBtn}" Click="OnToggleTheme"/>
-            <Button Content="{loc:Tr UiLangToggle}" Click="OnToggleLanguage"/>
-            <Button Content="{loc:Tr UpdateBtn}" Click="OnUpdate"
-                    IsVisible="{Binding UpdateAvailable}"
-                    ToolTip.Tip="{Binding UpdateTipText}"/>
+            <Button Click="OnOpenAbout">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.InfoCircle}"/>
+                <TextBlock Text="{loc:Tr InfoBtn}"/>
+              </StackPanel>
+            </Button>
+            <Button Click="OnOpenConfigEditor">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.Settings}"/>
+                <TextBlock Text="{loc:Tr SettingsBtn}"/>
+              </StackPanel>
+            </Button>
+            <Button Click="OnExportMarkdown" ToolTip.Tip="{loc:Tr ExportMdTip}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.FileDownload}"/>
+                <TextBlock Text=".md"/>
+              </StackPanel>
+            </Button>
+            <Button Click="OnExportHtml" ToolTip.Tip="{loc:Tr ExportHtmlTip}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.FileDownload}"/>
+                <TextBlock Text=".html"/>
+              </StackPanel>
+            </Button>
+            <Button Click="OnToggleTheme">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.SunMoon}"/>
+                <TextBlock Text="{loc:Tr ThemeBtn}"/>
+              </StackPanel>
+            </Button>
+            <Button Click="OnToggleLanguage">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.Language}"/>
+                <TextBlock Text="{loc:Tr UiLangToggle}"/>
+              </StackPanel>
+            </Button>
+            <Button Click="OnUpdate" IsVisible="{Binding UpdateAvailable}"
+                    ToolTip.Tip="{Binding UpdateTipText}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.ArrowUp}"/>
+                <TextBlock Text="{loc:Tr UpdateBtn}"/>
+              </StackPanel>
+            </Button>
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Content="{loc:Tr RunBtn}" Command="{Binding RunCommand}"/>
-            <Button Content="{loc:Tr StopBtn}" Command="{Binding StopCommand}"/>
+            <Button Classes="accent" Command="{Binding RunCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.PlayerPlay}"/>
+                <TextBlock Text="{loc:Tr RunBtn}"/>
+              </StackPanel>
+            </Button>
+            <Button Command="{Binding StopCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.PlayerStop}"/>
+                <TextBlock Text="{loc:Tr StopBtn}"/>
+              </StackPanel>
+            </Button>
           </StackPanel>
         </DockPanel>
       </StackPanel>
@@ -161,8 +207,13 @@
               <ColumnDefinition Width="*" MinWidth="200"/>
             </Grid.ColumnDefinitions>
             <DockPanel Grid.Column="0" Margin="0,0,4,0">
-              <Button DockPanel.Dock="Top" Content="{loc:Tr ShowAllFiles}" Command="{Binding ShowAllFilesCommand}"
-                      HorizontalAlignment="Stretch" Margin="0,0,0,6"/>
+              <Button DockPanel.Dock="Top" Command="{Binding ShowAllFilesCommand}"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,0,6">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Classes="icon" Text="{x:Static ctrl:Icons.List}"/>
+                  <TextBlock Text="{loc:Tr ShowAllFiles}"/>
+                </StackPanel>
+              </Button>
               <ListBox ItemsSource="{Binding DiffFiles}" SelectedItem="{Binding SelectedDiffFile}">
                 <ListBox.ItemTemplate>
                   <DataTemplate x:DataType="m:DiffFile">
