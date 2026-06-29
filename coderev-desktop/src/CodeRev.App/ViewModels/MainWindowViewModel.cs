@@ -50,6 +50,10 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Recently opened repositories, newest first, for repo autocomplete.</summary>
     public ObservableCollection<RecentRepository> RecentRepositories { get; } = new();
 
+    /// <summary>Candidate base refs of the current repo (remote default first),
+    /// for the Base field's suggestions.</summary>
+    public ObservableCollection<string> BaseRefOptions { get; } = new();
+
     private void LoadRecentRepositories()
     {
         RecentRepositories.Clear();
@@ -61,6 +65,14 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try { _recentStore.Add(path); }
         catch { /* MRU list is best-effort; never disrupt the user */ }
+    }
+
+    /// <summary>Removes a repository from the recent list (the dropdown's × button).</summary>
+    public void RemoveRecent(RecentRepository repo)
+    {
+        try { _recentStore.Remove(repo.Path); }
+        catch { /* best-effort */ }
+        RecentRepositories.Remove(repo);
     }
 
     private CancellationTokenSource? _branchCts;
@@ -86,6 +98,9 @@ public partial class MainWindowViewModel : ObservableObject
         var branches = isRepo
             ? await RepoInspector.ListLocalBranchesAsync(path, ct)
             : (IReadOnlyList<string>)Array.Empty<string>();
+        var baseRefs = isRepo
+            ? await RepoInspector.ListBaseRefCandidatesAsync(path, branches, ct)
+            : (IReadOnlyList<string>)Array.Empty<string>();
         if (ct.IsCancellationRequested)
             return;
 
@@ -98,6 +113,9 @@ public partial class MainWindowViewModel : ObservableObject
             Branches.Clear();
             foreach (var b in branches)
                 Branches.Add(b);
+            BaseRefOptions.Clear();
+            foreach (var r in baseRefs)
+                BaseRefOptions.Add(r);
             if (isRepo)
                 LoadRecentRepositories();
             ImportRepoConfig();
@@ -181,9 +199,23 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty] private ReviewHistoryEntry? _selectedHistoryEntry;
 
+    // Tab order in the view: Review, Diff, History, Log.
+    private const int TabReview = 0;
+    private const int TabDiff = 1;
+
+    /// <summary>Index of the active main tab (two-way bound to the TabControl).</summary>
+    [ObservableProperty] private int _selectedTab;
+
     partial void OnSelectedHistoryEntryChanged(ReviewHistoryEntry? value)
     {
-        if (value is not null) LoadFromHistory(value);
+        if (value is null) return;
+        LoadFromHistory(value);
+        // Jump to the most useful tab: the Review when this run produced an AI
+        // review, otherwise the Diff (e.g. for dry-run entries).
+        if (!string.IsNullOrWhiteSpace(value.ReviewMarkdown))
+            SelectedTab = TabReview;
+        else if (HasDiff)
+            SelectedTab = TabDiff;
     }
 
     // D3: structured diff and review for the rich views.

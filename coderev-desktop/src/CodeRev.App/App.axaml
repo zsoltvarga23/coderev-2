@@ -84,6 +84,21 @@
   <Application.Styles>
     <FluentTheme />
 
+    <!-- Hand cursor on enabled interactive controls (buttons, switch, combo,
+         tabs); disabled controls keep the default arrow. -->
+    <Style Selector="Button:not(:disabled)">
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="ToggleSwitch:not(:disabled)">
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="ComboBox:not(:disabled)">
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="TabItem:not(:disabled)">
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
     <!-- Icon glyphs rendered from the bundled font. -->
     <Style Selector="TextBlock.icon">
       <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>

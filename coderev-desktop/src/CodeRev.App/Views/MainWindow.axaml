@@ -142,14 +142,22 @@
                              ItemsSource="{Binding RecentRepositories}"
                              ValueMemberBinding="{Binding Path}"
                              FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
-                             IsTextCompletionEnabled="False">
+                             IsTextCompletionEnabled="False"
+                             x:Name="RepoBox">
               <AutoCompleteBox.ItemTemplate>
                 <DataTemplate x:DataType="hist:RecentRepository">
-                  <StackPanel Margin="0,1">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding Path}" FontSize="10" Foreground="Gray"
-                               TextTrimming="CharacterEllipsis"/>
-                  </StackPanel>
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right" Classes="iconbtn" Padding="5"
+                            VerticalAlignment="Center" Click="OnRemoveRecent"
+                            ToolTip.Tip="{loc:Tr RecentRemoveTip}">
+                      <TextBlock Classes="icon" FontSize="14" Text="{x:Static ctrl:Icons.X}"/>
+                    </Button>
+                    <StackPanel Margin="0,1">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                      <TextBlock Text="{Binding Path}" FontSize="10" Foreground="Gray"
+                                 TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                  </DockPanel>
                 </DataTemplate>
               </AutoCompleteBox.ItemTemplate>
             </AutoCompleteBox>
@@ -158,12 +166,17 @@
           <AutoCompleteBox Grid.Row="0" Grid.Column="3" Width="200" Watermark="feature/x"
                            Text="{Binding Branch}" ItemsSource="{Binding Branches}"
                            FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
-                           IsTextCompletionEnabled="False" Margin="0,0,0,4"/>
+                           IsTextCompletionEnabled="False" Margin="0,0,0,4"
+                           x:Name="BranchBox"/>
 
           <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
                       Orientation="Horizontal" Spacing="8">
             <TextBlock Text="{loc:Tr BaseLabel}" VerticalAlignment="Center"/>
-            <TextBox Width="160" Text="{Binding BaseRef}" Watermark="origin/main"/>
+            <AutoCompleteBox Width="170" Text="{Binding BaseRef}" Watermark="origin/main"
+                             ItemsSource="{Binding BaseRefOptions}"
+                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
+                             IsTextCompletionEnabled="False"
+                             x:Name="BaseBox"/>
             <TextBlock Text="{loc:Tr AgentLabel}" VerticalAlignment="Center"/>
             <ComboBox ItemsSource="{Binding AgentOptions}" SelectedItem="{Binding Agent}" Width="150"/>
             <TextBlock Text="{loc:Tr ReviewLangLabel}" VerticalAlignment="Center"/>
@@ -239,7 +252,9 @@
         </DockPanel>
       </Border>
 
-      <TabControl Grid.Column="1">
+      <!-- Tab order (Review, Diff, History, Log) must match the Tab* index
+           constants in MainWindowViewModel that drive history-entry navigation. -->
+      <TabControl Grid.Column="1" SelectedIndex="{Binding SelectedTab}">
         <!-- Review: color-coded, sectioned cards (falls back to raw stream) -->
         <TabItem Header="{loc:Tr TabReview}">
           <Grid>

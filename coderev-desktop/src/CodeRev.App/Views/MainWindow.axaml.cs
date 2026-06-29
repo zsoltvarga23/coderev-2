@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -15,6 +16,7 @@ using CodeRev.App.Localization;
 using CodeRev.App.Services;
 using CodeRev.App.ViewModels;
 using CodeRev.Core.Export;
+using CodeRev.Core.History;
 
 namespace CodeRev.App.Views;
 
@@ -29,6 +31,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Opened += OnWindowOpened;
+
+        // Open the suggestion list on click. Handled in the tunnel phase so it
+        // fires on the box before its inner TextBox swallows the pointer, and on
+        // the box (not the popup) so selecting an item doesn't reopen the list.
+        foreach (var box in new[] { RepoBox, BranchBox, BaseBox })
+            box.AddHandler(PointerPressedEvent, OnSuggestBoxPointerPressed, RoutingStrategies.Tunnel);
     }
 
     /// <summary>On launch, quietly check GitHub Releases. If a newer version is
@@ -55,6 +63,29 @@ public partial class MainWindow : Window
         {
             // Network error / no published release — leave the button hidden.
         }
+    }
+
+    /// <summary>Removes a repository from the recent-repos dropdown (× button).
+    /// Handled here (not via a binding) so the click doesn't also select the item
+    /// in the AutoCompleteBox.</summary>
+    private void OnRemoveRecent(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm && sender is Button { DataContext: RecentRepository repo })
+            vm.RemoveRecent(repo);
+        e.Handled = true;
+    }
+
+    /// <summary>Opens an autocomplete box's suggestion list when the field is
+    /// clicked, so the recent repos / branches / base refs are offered on click,
+    /// not only on typing. Deferred so it runs after the control's own pointer
+    /// handling; keying off a click on the box (not focus) avoids reopening the
+    /// list right after an item is selected. Clicking while it is already open is
+    /// a no-op (close with Escape or by clicking away) — matching the
+    /// always-show, MinimumPrefixLength=0 design.</summary>
+    private void OnSuggestBoxPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is AutoCompleteBox box)
+            Dispatcher.UIThread.Post(() => box.IsDropDownOpen = true);
     }
 
     /// <summary>Switches the UI language (English &lt;-&gt; Hungarian) live.</summary>
