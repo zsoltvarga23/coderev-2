@@ -15,6 +15,7 @@ using CodeRev.App.Localization;
 using CodeRev.App.Services;
 using CodeRev.App.ViewModels;
 using CodeRev.Core.Export;
+using CodeRev.Core.History;
 
 namespace CodeRev.App.Views;
 
@@ -55,6 +56,16 @@ public partial class MainWindow : Window
         {
             // Network error / no published release — leave the button hidden.
         }
+    }
+
+    /// <summary>Removes a repository from the recent-repos dropdown (× button).
+    /// Handled here (not via a binding) so the click doesn't also select the item
+    /// in the AutoCompleteBox.</summary>
+    private void OnRemoveRecent(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm && sender is Button { DataContext: RecentRepository repo })
+            vm.RemoveRecent(repo);
+        e.Handled = true;
     }
 
     /// <summary>Switches the UI language (English &lt;-&gt; Hungarian) live.</summary>

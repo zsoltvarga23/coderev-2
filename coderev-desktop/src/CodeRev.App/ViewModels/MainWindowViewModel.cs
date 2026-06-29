@@ -63,6 +63,14 @@ public partial class MainWindowViewModel : ObservableObject
         catch { /* MRU list is best-effort; never disrupt the user */ }
     }
 
+    /// <summary>Removes a repository from the recent list (the dropdown's × button).</summary>
+    public void RemoveRecent(RecentRepository repo)
+    {
+        try { _recentStore.Remove(repo.Path); }
+        catch { /* best-effort */ }
+        RecentRepositories.Remove(repo);
+    }
+
     private CancellationTokenSource? _branchCts;
 
     // Refresh branch suggestions when the repo path changes (debounced, so
@@ -181,9 +189,23 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty] private ReviewHistoryEntry? _selectedHistoryEntry;
 
+    // Tab order in the view: Review, Diff, History, Log.
+    private const int TabReview = 0;
+    private const int TabDiff = 1;
+
+    /// <summary>Index of the active main tab (two-way bound to the TabControl).</summary>
+    [ObservableProperty] private int _selectedTab;
+
     partial void OnSelectedHistoryEntryChanged(ReviewHistoryEntry? value)
     {
-        if (value is not null) LoadFromHistory(value);
+        if (value is null) return;
+        LoadFromHistory(value);
+        // Jump to the most useful tab: the Review when this run produced an AI
+        // review, otherwise the Diff (e.g. for dry-run entries).
+        if (!string.IsNullOrWhiteSpace(value.ReviewMarkdown))
+            SelectedTab = TabReview;
+        else if (HasDiff)
+            SelectedTab = TabDiff;
     }
 
     // D3: structured diff and review for the rich views.

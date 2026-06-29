@@ -145,11 +145,18 @@
                              IsTextCompletionEnabled="False">
               <AutoCompleteBox.ItemTemplate>
                 <DataTemplate x:DataType="hist:RecentRepository">
-                  <StackPanel Margin="0,1">
-                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                    <TextBlock Text="{Binding Path}" FontSize="10" Foreground="Gray"
-                               TextTrimming="CharacterEllipsis"/>
-                  </StackPanel>
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right" Classes="iconbtn" Padding="5"
+                            VerticalAlignment="Center" Click="OnRemoveRecent"
+                            ToolTip.Tip="{loc:Tr RecentRemoveTip}">
+                      <TextBlock Classes="icon" FontSize="14" Text="{x:Static ctrl:Icons.X}"/>
+                    </Button>
+                    <StackPanel Margin="0,1">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                      <TextBlock Text="{Binding Path}" FontSize="10" Foreground="Gray"
+                                 TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                  </DockPanel>
                 </DataTemplate>
               </AutoCompleteBox.ItemTemplate>
             </AutoCompleteBox>
@@ -239,7 +246,7 @@
         </DockPanel>
       </Border>
 
-      <TabControl Grid.Column="1">
+      <TabControl Grid.Column="1" SelectedIndex="{Binding SelectedTab}">
         <!-- Review: color-coded, sectioned cards (falls back to raw stream) -->
         <TabItem Header="{loc:Tr TabReview}">
           <Grid>

@@ -84,6 +84,20 @@
   <Application.Styles>
     <FluentTheme />
 
+    <!-- Hand cursor on interactive controls (buttons, switch, combo, tabs). -->
+    <Style Selector="Button">
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="ToggleSwitch">
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
     <!-- Icon glyphs rendered from the bundled font. -->
     <Style Selector="TextBlock.icon">
       <Setter Property="FontFamily" Value="{StaticResource IconFont}"/>
