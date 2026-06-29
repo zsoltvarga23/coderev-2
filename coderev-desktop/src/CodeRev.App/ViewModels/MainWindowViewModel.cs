@@ -50,6 +50,10 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Recently opened repositories, newest first, for repo autocomplete.</summary>
     public ObservableCollection<RecentRepository> RecentRepositories { get; } = new();
 
+    /// <summary>Candidate base refs of the current repo (remote default first),
+    /// for the Base field's suggestions.</summary>
+    public ObservableCollection<string> BaseRefOptions { get; } = new();
+
     private void LoadRecentRepositories()
     {
         RecentRepositories.Clear();
@@ -94,6 +98,9 @@ public partial class MainWindowViewModel : ObservableObject
         var branches = isRepo
             ? await RepoInspector.ListLocalBranchesAsync(path, ct)
             : (IReadOnlyList<string>)Array.Empty<string>();
+        var baseRefs = isRepo
+            ? await RepoInspector.ListBaseRefCandidatesAsync(path, ct)
+            : (IReadOnlyList<string>)Array.Empty<string>();
         if (ct.IsCancellationRequested)
             return;
 
@@ -106,6 +113,9 @@ public partial class MainWindowViewModel : ObservableObject
             Branches.Clear();
             foreach (var b in branches)
                 Branches.Add(b);
+            BaseRefOptions.Clear();
+            foreach (var r in baseRefs)
+                BaseRefOptions.Add(r);
             if (isRepo)
                 LoadRecentRepositories();
             ImportRepoConfig();

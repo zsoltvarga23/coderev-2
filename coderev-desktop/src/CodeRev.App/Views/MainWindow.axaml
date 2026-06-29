@@ -142,7 +142,8 @@
                              ItemsSource="{Binding RecentRepositories}"
                              ValueMemberBinding="{Binding Path}"
                              FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
-                             IsTextCompletionEnabled="False">
+                             IsTextCompletionEnabled="False"
+                             x:Name="RepoBox">
               <AutoCompleteBox.ItemTemplate>
                 <DataTemplate x:DataType="hist:RecentRepository">
                   <DockPanel>
@@ -165,12 +166,17 @@
           <AutoCompleteBox Grid.Row="0" Grid.Column="3" Width="200" Watermark="feature/x"
                            Text="{Binding Branch}" ItemsSource="{Binding Branches}"
                            FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
-                           IsTextCompletionEnabled="False" Margin="0,0,0,4"/>
+                           IsTextCompletionEnabled="False" Margin="0,0,0,4"
+                           x:Name="BranchBox"/>
 
           <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
                       Orientation="Horizontal" Spacing="8">
             <TextBlock Text="{loc:Tr BaseLabel}" VerticalAlignment="Center"/>
-            <TextBox Width="160" Text="{Binding BaseRef}" Watermark="origin/main"/>
+            <AutoCompleteBox Width="170" Text="{Binding BaseRef}" Watermark="origin/main"
+                             ItemsSource="{Binding BaseRefOptions}"
+                             FilterMode="ContainsOrdinal" MinimumPrefixLength="0"
+                             IsTextCompletionEnabled="False"
+                             x:Name="BaseBox"/>
             <TextBlock Text="{loc:Tr AgentLabel}" VerticalAlignment="Center"/>
             <ComboBox ItemsSource="{Binding AgentOptions}" SelectedItem="{Binding Agent}" Width="150"/>
             <TextBlock Text="{loc:Tr ReviewLangLabel}" VerticalAlignment="Center"/>

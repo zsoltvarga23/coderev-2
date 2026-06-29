@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using CodeRev.Core.Engine;
 
 namespace CodeRev.Core.Tests;
@@ -65,5 +66,46 @@ public class RepoInspectorTests
         Assert.Contains("main", branches);
         Assert.Contains("feature/login", branches);
         Assert.Contains("bugfix/auth", branches);
+    }
+
+    [Fact]
+    public async Task BaseRefCandidates_IncludeLocalBranches_WhenNoRemote()
+    {
+        if (!GitAvailable())
+            return;
+
+        var dir = Directory.CreateTempSubdirectory().FullName;
+        Git(dir, "init", "-b", "main");
+        File.WriteAllText(Path.Combine(dir, "a.txt"), "x");
+        Git(dir, "add", ".");
+        Git(dir, "commit", "-m", "init");
+        Git(dir, "branch", "develop");
+
+        var candidates = await RepoInspector.ListBaseRefCandidatesAsync(dir);
+        Assert.Contains("main", candidates);
+        Assert.Contains("develop", candidates);
+    }
+
+    [Fact]
+    public async Task BaseRefCandidates_RemoteBranchesComeBeforeLocal()
+    {
+        if (!GitAvailable())
+            return;
+
+        var remote = Directory.CreateTempSubdirectory().FullName;
+        Git(remote, "init", "--bare", "-b", "main");
+
+        var work = Directory.CreateTempSubdirectory().FullName;
+        Git(work, "init", "-b", "main");
+        File.WriteAllText(Path.Combine(work, "a.txt"), "x");
+        Git(work, "add", ".");
+        Git(work, "commit", "-m", "init");
+        Git(work, "remote", "add", "origin", remote);
+        Git(work, "push", "origin", "main");
+
+        var candidates = (await RepoInspector.ListBaseRefCandidatesAsync(work)).ToList();
+        Assert.Contains("origin/main", candidates);
+        Assert.Contains("main", candidates);
+        Assert.True(candidates.IndexOf("origin/main") < candidates.IndexOf("main"));
     }
 }

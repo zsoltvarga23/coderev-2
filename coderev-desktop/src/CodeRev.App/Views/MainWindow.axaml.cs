@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -30,6 +31,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         Opened += OnWindowOpened;
+
+        // Open the suggestion list on click. Handled in the tunnel phase so it
+        // fires on the box before its inner TextBox swallows the pointer, and on
+        // the box (not the popup) so selecting an item doesn't reopen the list.
+        foreach (var box in new[] { RepoBox, BranchBox, BaseBox })
+            box.AddHandler(PointerPressedEvent, OnSuggestBoxPointerPressed, RoutingStrategies.Tunnel);
     }
 
     /// <summary>On launch, quietly check GitHub Releases. If a newer version is
@@ -66,6 +73,17 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel vm && sender is Button { DataContext: RecentRepository repo })
             vm.RemoveRecent(repo);
         e.Handled = true;
+    }
+
+    /// <summary>Opens an autocomplete box's suggestion list when the field is
+    /// clicked, so the recent repos / branches / base refs are offered on click,
+    /// not only on typing. Deferred so it runs after the control's own pointer
+    /// handling; keying off a click on the box (not focus) avoids reopening the
+    /// list right after an item is selected.</summary>
+    private void OnSuggestBoxPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is AutoCompleteBox box)
+            Dispatcher.UIThread.Post(() => box.IsDropDownOpen = true);
     }
 
     /// <summary>Switches the UI language (English &lt;-&gt; Hungarian) live.</summary>
