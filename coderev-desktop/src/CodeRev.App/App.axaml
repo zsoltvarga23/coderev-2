@@ -84,17 +84,18 @@
   <Application.Styles>
     <FluentTheme />
 
-    <!-- Hand cursor on interactive controls (buttons, switch, combo, tabs). -->
-    <Style Selector="Button">
+    <!-- Hand cursor on enabled interactive controls (buttons, switch, combo,
+         tabs); disabled controls keep the default arrow. -->
+    <Style Selector="Button:not(:disabled)">
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
-    <Style Selector="ToggleSwitch">
+    <Style Selector="ToggleSwitch:not(:disabled)">
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
-    <Style Selector="ComboBox">
+    <Style Selector="ComboBox:not(:disabled)">
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
-    <Style Selector="TabItem">
+    <Style Selector="TabItem:not(:disabled)">
       <Setter Property="Cursor" Value="Hand"/>
     </Style>
 

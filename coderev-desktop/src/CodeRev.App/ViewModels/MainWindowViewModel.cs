@@ -99,7 +99,7 @@ public partial class MainWindowViewModel : ObservableObject
             ? await RepoInspector.ListLocalBranchesAsync(path, ct)
             : (IReadOnlyList<string>)Array.Empty<string>();
         var baseRefs = isRepo
-            ? await RepoInspector.ListBaseRefCandidatesAsync(path, ct)
+            ? await RepoInspector.ListBaseRefCandidatesAsync(path, branches, ct)
             : (IReadOnlyList<string>)Array.Empty<string>();
         if (ct.IsCancellationRequested)
             return;

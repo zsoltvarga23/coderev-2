@@ -30,9 +30,7 @@ public static class RepoInspector
         if (!ok)
             return Array.Empty<string>();
 
-        return output
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
+        return Split(output).ToList();
     }
 
     /// <summary>
@@ -40,8 +38,11 @@ public static class RepoInspector
     /// (origin/HEAD → e.g. origin/main or origin/master), then the other
     /// remote-tracking branches, then local branches. De-duplicated. This lets
     /// the GUI suggest real refs instead of guessing main vs origin/main.
+    /// Pass <paramref name="localBranches"/> (e.g. from a prior
+    /// <see cref="ListLocalBranchesAsync"/>) to avoid re-running git for them.
     /// </summary>
-    public static async Task<IReadOnlyList<string>> ListBaseRefCandidatesAsync(string? path, CancellationToken ct = default)
+    public static async Task<IReadOnlyList<string>> ListBaseRefCandidatesAsync(
+        string? path, IReadOnlyList<string>? localBranches = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(path) || !Directory.Exists(path))
             return Array.Empty<string>();
@@ -68,10 +69,19 @@ public static class RepoInspector
                     Add(r);
 
         // Local branches last (a base is usually a remote ref, but allow these).
-        var (okL, locals) = await RunGitAsync(path!, ct, "for-each-ref", "--format=%(refname:short)", "refs/heads");
-        if (okL)
-            foreach (var l in Split(locals))
+        // Reuse the caller's list when given, else fetch it.
+        if (localBranches is not null)
+        {
+            foreach (var l in localBranches)
                 Add(l);
+        }
+        else
+        {
+            var (okL, locals) = await RunGitAsync(path!, ct, "for-each-ref", "--format=%(refname:short)", "refs/heads");
+            if (okL)
+                foreach (var l in Split(locals))
+                    Add(l);
+        }
 
         return result;
     }

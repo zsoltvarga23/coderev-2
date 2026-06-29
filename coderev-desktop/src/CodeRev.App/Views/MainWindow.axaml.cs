@@ -79,7 +79,9 @@ public partial class MainWindow : Window
     /// clicked, so the recent repos / branches / base refs are offered on click,
     /// not only on typing. Deferred so it runs after the control's own pointer
     /// handling; keying off a click on the box (not focus) avoids reopening the
-    /// list right after an item is selected.</summary>
+    /// list right after an item is selected. Clicking while it is already open is
+    /// a no-op (close with Escape or by clicking away) — matching the
+    /// always-show, MinimumPrefixLength=0 design.</summary>
     private void OnSuggestBoxPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (sender is AutoCompleteBox box)

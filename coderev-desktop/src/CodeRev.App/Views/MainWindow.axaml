@@ -252,6 +252,8 @@
         </DockPanel>
       </Border>
 
+      <!-- Tab order (Review, Diff, History, Log) must match the Tab* index
+           constants in MainWindowViewModel that drive history-entry navigation. -->
       <TabControl Grid.Column="1" SelectedIndex="{Binding SelectedTab}">
         <!-- Review: color-coded, sectioned cards (falls back to raw stream) -->
         <TabItem Header="{loc:Tr TabReview}">
