@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="using:CodeRev.App"
              x:Class="CodeRev.App.App"
              RequestedThemeVariant="Default">
   <Application.Resources>
@@ -40,6 +41,15 @@
           <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#2DA44E"/>
           <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#278C42"/>
           <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#278C42"/>
+          <SolidColorBrush x:Key="CardBorder" Color="#22808080"/>
+          <CornerRadius x:Key="TabPillCorner">8</CornerRadius>
+          <CornerRadius x:Key="CardCorner">6</CornerRadius>
+          <CornerRadius x:Key="CardHeaderCorner">6,6,0,0</CornerRadius>
+          <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+          <!-- Tab bevel edges: invisible on modern themes, 3D on retro. -->
+          <SolidColorBrush x:Key="TabBevelOuter" Color="Transparent"/>
+          <SolidColorBrush x:Key="TabBevelInner" Color="Transparent"/>
+          <SolidColorBrush x:Key="TabBevelMid" Color="Transparent"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="DiffAddedBg" Color="#553FB950"/>
@@ -69,15 +79,48 @@
           <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#3FB950"/>
           <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#54C268"/>
           <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#54C268"/>
+          <SolidColorBrush x:Key="CardBorder" Color="#22808080"/>
+          <CornerRadius x:Key="TabPillCorner">8</CornerRadius>
+          <CornerRadius x:Key="CardCorner">6</CornerRadius>
+          <CornerRadius x:Key="CardHeaderCorner">6,6,0,0</CornerRadius>
+          <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+          <SolidColorBrush x:Key="TabBevelOuter" Color="Transparent"/>
+          <SolidColorBrush x:Key="TabBevelInner" Color="Transparent"/>
+          <SolidColorBrush x:Key="TabBevelMid" Color="Transparent"/>
+        </ResourceDictionary>
+        <!-- Retro (Windows 2000/XP era): beige surfaces, classic selection blue
+             for tabs, square corners everywhere. The green accent (Start) is
+             inherited from Light. Falls back to Light for anything not listed. -->
+        <ResourceDictionary x:Key="{x:Static app:AppThemes.Retro}">
+          <SolidColorBrush x:Key="TabSelectedBg" Color="#316AC5"/>
+          <SolidColorBrush x:Key="TabPillBg" Color="#DCD8C8"/>
+          <SolidColorBrush x:Key="AppDanger" Color="#C84D3F"/>
+          <SolidColorBrush x:Key="AppDangerHover" Color="#B03A2E"/>
+          <SolidColorBrush x:Key="StepRunning" Color="#316AC5"/>
+          <!-- XP-era surface palette used by the retro styles below. -->
+          <SolidColorBrush x:Key="RetroFace" Color="#ECE9D8"/>
+          <SolidColorBrush x:Key="RetroFaceShaded" Color="#DCD8C8"/>
+          <SolidColorBrush x:Key="RetroBorder" Color="#ACA899"/>
+          <SolidColorBrush x:Key="RetroInputBorder" Color="#7F9DB9"/>
+          <SolidColorBrush x:Key="CardBorder" Color="#ACA899"/>
+          <CornerRadius x:Key="TabPillCorner">0</CornerRadius>
+          <CornerRadius x:Key="CardCorner">0</CornerRadius>
+          <CornerRadius x:Key="CardHeaderCorner">0</CornerRadius>
+          <!-- Square every Fluent control (incl. flyout/popup surfaces, which
+               live outside the window tree and so can't get the .retro class). -->
+          <CornerRadius x:Key="ControlCornerRadius">0</CornerRadius>
+          <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+          <!-- Raised 3D edges on the tab pills, like the classic buttons. -->
+          <SolidColorBrush x:Key="TabBevelOuter" Color="#FFFFFF"/>
+          <SolidColorBrush x:Key="TabBevelInner" Color="#404040"/>
+          <SolidColorBrush x:Key="TabBevelMid" Color="#808080"/>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
 
       <!-- Bundled icon font: a subset of Tabler Icons (MIT). Glyph constants in
-           Controls/Icons.cs. -->
+           Controls/Icons.cs. ControlCornerRadius lives in the theme dictionaries
+           (8 for Light/Dark, 0 for Retro). -->
       <FontFamily x:Key="IconFont">avares://CodeRev.App/Assets/coderev-icons.ttf#tabler-icons</FontFamily>
-
-      <!-- Rounder corners on inputs/buttons across the app (matches the design). -->
-      <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
     </ResourceDictionary>
   </Application.Resources>
 
@@ -148,6 +191,65 @@
     </Style>
     <Style Selector="Button.iconbtn:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="#22808080"/>
+    </Style>
+
+    <!-- ================= Retro (Windows 2000/XP era) form language ==========
+         Active when the main window carries the "retro" class (set together
+         with the Retro theme variant). Colours come from the Retro theme
+         dictionary; these styles change shape: beige surfaces, Tahoma, square
+         corners, 3D-beveled buttons and flat blue-gray input borders. -->
+
+    <Style Selector="Window.retro">
+      <Setter Property="Background" Value="{DynamicResource RetroFace}"/>
+      <Setter Property="FontFamily" Value="Tahoma,Segoe UI,sans-serif"/>
+    </Style>
+
+    <!-- Classic raised 3D button: white highlight top/left, dark shadow
+         bottom/right with a mid-gray inner shadow line; pressed inverts. -->
+    <Style Selector="Window.retro Button">
+      <Setter Property="Background" Value="{DynamicResource RetroFace}"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="PART_BevelOuter" Background="{TemplateBinding Background}"
+                  BorderBrush="#FFFFFF" BorderThickness="1,1,0,0">
+            <Border Name="PART_BevelInner" BorderBrush="#404040" BorderThickness="0,0,1,1">
+              <Border Name="PART_BevelMid" BorderBrush="#808080" BorderThickness="0,0,1,1">
+                <ContentPresenter Name="PART_ContentPresenter"
+                                  Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Padding="{TemplateBinding Padding}"
+                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+              </Border>
+            </Border>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Window.retro Button:pressed /template/ Border#PART_BevelOuter">
+      <Setter Property="BorderBrush" Value="#404040"/>
+    </Style>
+    <Style Selector="Window.retro Button:pressed /template/ Border#PART_BevelInner">
+      <Setter Property="BorderBrush" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Window.retro Button:pressed /template/ Border#PART_BevelMid">
+      <Setter Property="BorderBrush" Value="{DynamicResource RetroFaceShaded}"/>
+    </Style>
+    <Style Selector="Window.retro Button:disabled">
+      <Setter Property="Foreground" Value="#808080"/>
+    </Style>
+
+    <!-- Inputs: square with the flat XP blue-gray border. -->
+    <Style Selector="Window.retro TextBox">
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource RetroInputBorder}"/>
+    </Style>
+    <Style Selector="Window.retro ComboBox">
+      <Setter Property="CornerRadius" Value="0"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource RetroInputBorder}"/>
+    </Style>
+    <Style Selector="Window.retro ToggleSwitch">
+      <Setter Property="FontFamily" Value="Tahoma,Segoe UI,sans-serif"/>
     </Style>
   </Application.Styles>
 </Application>

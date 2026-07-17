@@ -17,6 +17,7 @@ using CodeRev.App.Services;
 using CodeRev.App.ViewModels;
 using CodeRev.Core.Export;
 using CodeRev.Core.History;
+using CodeRev.Core.Settings;
 
 namespace CodeRev.App.Views;
 
@@ -27,10 +28,17 @@ public partial class MainWindow : Window
     private UpdateService? _updateService;
     private Velopack.UpdateInfo? _pendingUpdate;
 
+    private readonly UiSettingsStore _uiSettings = new();
+
     public MainWindow()
     {
         InitializeComponent();
         Opened += OnWindowOpened;
+
+        // Restore the persisted theme; empty means follow the system default.
+        var savedTheme = _uiSettings.Load().Theme;
+        if (!string.IsNullOrEmpty(savedTheme))
+            ApplyTheme(savedTheme, persist: false);
 
         // Open the suggestion list on click. Handled in the tunnel phase so it
         // fires on the box before its inner TextBox swallows the pointer, and on
@@ -166,14 +174,32 @@ public partial class MainWindow : Window
         vm.StatusText = Loc.Instance.T("StExported", file.Name);
     }
 
-    /// <summary>Toggles the application between light and dark themes.</summary>
-    private void OnToggleTheme(object? sender, RoutedEventArgs e)
+    /// <summary>Applies a theme picked from the theme menu and persists it.</summary>
+    private void OnPickTheme(object? sender, RoutedEventArgs e)
     {
-        if (Application.Current is { } app)
+        if (sender is MenuItem { Tag: string key })
+            ApplyTheme(key, persist: true);
+    }
+
+    /// <summary>
+    /// Switches the app to the given theme ("light" | "dark" | "retro"). The
+    /// Retro variant needs two things: the variant itself (colour resources)
+    /// and a "retro" class on this window (shape styles: bevels, square
+    /// corners, Tahoma). Unknown keys fall back to light.
+    /// </summary>
+    private void ApplyTheme(string key, bool persist)
+    {
+        if (Application.Current is not { } app)
+            return;
+        app.RequestedThemeVariant = key switch
         {
-            app.RequestedThemeVariant =
-                app.ActualThemeVariant == ThemeVariant.Dark ? ThemeVariant.Light : ThemeVariant.Dark;
-        }
+            "dark" => ThemeVariant.Dark,
+            "retro" => AppThemes.Retro,
+            _ => ThemeVariant.Light,
+        };
+        Classes.Set("retro", key == "retro");
+        if (persist)
+            _uiSettings.Save(new UiSettings { Theme = key });
     }
 
     /// <summary>Installs the update found at startup: confirm, download (with
@@ -263,6 +289,7 @@ public partial class MainWindow : Window
             },
         };
 
+        AppThemes.ApplyWindowClass(dialog);
         yes.Click += (_, _) => { tcs.TrySetResult(true); dialog.Close(); };
         no.Click += (_, _) => { tcs.TrySetResult(false); dialog.Close(); };
         dialog.Closed += (_, _) => tcs.TrySetResult(false);
