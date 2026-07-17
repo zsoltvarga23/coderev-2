@@ -10,6 +10,7 @@ public partial class AboutWindow : Window
     public AboutWindow()
     {
         InitializeComponent();
+        AppThemes.ApplyWindowClass(this);
 
         // Show the real build version rather than a hard-coded one.
         var v = Assembly.GetExecutingAssembly().GetName().Version;
