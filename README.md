@@ -1,30 +1,119 @@
-# coderev (Go)
+# coderev
 
-AI-alapú Pull Request review parancssori eszköz. Egy git ág diffjéből
-összeállít egy promptot, átadja egy konfigurálható AI-ügynöknek (Codex, Copilot
-vagy bármilyen CLI), és **élő konzolos visszajelzés** mellett kiírja a review-t.
+**AI-alapú kódáttekintő (code review) eszköz** — egy git branch változásait
+elküldi egy AI-ügynöknek (pl. Claude), és visszakapod strukturált, magyar
+vagy angol nyelvű review-t: mi jó, mi hibás, mit érdemes még megcsinálni.
+Kétféleképp használható, ugyanazzal a motorral: parancssorból (**CLI**) vagy
+grafikus felületen (**Desktop GUI**).
 
-A `coderev-legacy/` Python eszköz Go nyelvű újraírása, a
-[hibák javításával](docs/02-hibak-es-hianyossagok.md) és élő haladásjelzéssel.
+![coderev Desktop — Review nézet](docs/images/coderev-app-light.svg)
 
-## Telepítés / build
+---
 
-Egyszerű, per-user telepítő (CLI, GUI vagy mindkettő) — lásd [INSTALL.md](INSTALL.md):
+## Mi ez, és kinek való?
+
+Ha valaha manuálisan mentél végig egy pull request diffjén, tudod, hogy ez
+időigényes és könnyű benne elsiklani valami fölött. A coderev ezt a lépést
+automatizálja: **te csak megadod, melyik branch-et akarod áttekinteni**, a
+program pedig
+
+1. lekéri a git diffet a megadott branch és egy bázis-ág (pl. `origin/main`)
+   között,
+2. összeállít belőle egy jól strukturált promptot (a releváns kontextussal
+   együtt),
+3. átadja egy **AI-ügynöknek** (Claude Code, OpenAI Codex, GitHub Copilot
+   CLI, vagy bármilyen más parancssori eszköz),
+4. és a választ **élőben**, formázva, szekciókra bontva (Összegzés / Fő
+   problémák / Apró problémák / Tesztek / Javaslatok) jeleníti meg.
+
+Nem kell hozzá semmilyen programozói előismeret a coderev-hez magához —
+elég tudni, melyik git branch-et szeretnéd áttekintetni, és mihez képest
+(melyik a "bázis" ág). A program vezet végig a többin.
+
+## Hogyan működik belülről?
+
+A projekt két rétegből áll, amelyek **egy közös motort** használnak, így a
+viselkedésük mindig ugyanaz:
+
+| Réteg | Nyelv | Szerepe |
+|---|---|---|
+| **Motor (`coderev` CLI)** | Go | git-műveletek, a prompt összeállítása, az AI-ügynök meghívása, az eredmény kiírása. Önmagában is használható parancssorból. |
+| **Desktop GUI** | .NET / Avalonia | A motort alfolyamatként indítja, és annak strukturált (NDJSON) eseményfolyamát jeleníti meg élőben: lépések, diff, streamelt AI-válasz. Nem duplikálja a logikát — csak vizuálisan mutatja meg. |
+
+Fontos, hogy a coderev **nem módosítja a repository-t** — nincs `git
+checkout`, nincs semmilyen destruktív művelet. Csak olvassa a diffet a
+megadott két ref között.
+
+## Főbb funkciók
+
+- **Élő haladásjelzés** — a review minden lépése (repó ellenőrzés, fetch,
+  diff, prompt-építés, AI-hívás) látható státusz-ikonokkal, futás közben.
+- **Formázott review** — a natív markdown-megjelenítés (kódblokkok,
+  listák, kiemelések) miatt a review azonnal olvasható, nem nyers szöveg.
+- **Színes, sorszámozott diff-nézet**, fájllista szerinti navigálással és
+  szabadon átméretezhető oszlopokkal.
+- **Review-előzmények** — minden lefutott review automatikusan elmentődik
+  (repository szerint szűrhető), bármikor visszatölthető és exportálható
+  Markdown vagy HTML formátumba.
+- **Dry-run mód** — az AI meghívása nélkül is megnézheted, pontosan mi
+  kerülne bele a promptba (hasznos költség nélküli teszteléshez).
+- **Legutóbbi repository-k és branch-ek** megjegyzése, egy kattintással
+  újranyithatók.
+- **Automatikus frissítés** — mind a GUI (⬆ gomb az appban), mind a CLI
+  (`coderev update`) magától frissül a legújabb kiadásra.
+- **Három megjelenés**: Világos, Sötét, és egy retró **Windows 2000/XP
+  korszak**-stílusú téma (lásd lentebb).
+
+## A retró (2000-es évek) téma
+
+A szokásos világos/sötét mellett választható egy harmadik, játékos téma is,
+amely a korai 2000-es évek Windows-alkalmazásainak (Windows 2000 / XP)
+kinézetét idézi: bézs felületek, 3D "domború" gombok, szögletes sarkok,
+klasszikus kék kijelölés-szín.
+
+![coderev Desktop — Retró téma](docs/images/coderev-app-retro.svg)
+
+A téma a fejlécben található 🌓 gomb legördülő menüjéből választható
+(*Világos / Sötét / Retro*), és a választás automatikusan megjegyződik a
+következő indításig.
+
+## Mire van szükséged a használatához?
+
+| Mi kell | Mire |
+|---|---|
+| **`git`** a PATH-on | A repository elemzéséhez — mindig szükséges. |
+| **Egy AI-ügynök CLI** (pl. a [Claude Code CLI](https://docs.anthropic.com/claude/docs/claude-code)) | Csak a **valódi** (nem dry-run) review-hoz. |
+| Semmi más | A telepítés SDK-mentes — se Go, se .NET nem kell a végfelhasználónak. |
+
+> **Tipp:** ha csak ki szeretnéd próbálni a felületet AI-hívás (és
+> költség) nélkül, pipáld be a **Dry-run** kapcsolót — így a teljes
+> folyamat lefut, csak az AI-válasz marad ki.
+
+## Telepítés
+
+A legegyszerűbb út: töltsd le a kész csomagot a
+**[Releases oldalról](https://github.com/zsoltvarga23/coderev-2/releases/latest)** —
+nincs szükség semmilyen fejlesztői eszközre.
 
 ```powershell
-./install.ps1            # Windows: CLI + GUI
-./install.sh             # Linux/macOS
+# Windows — CLI telepítése egy paranccsal
+irm https://raw.githubusercontent.com/zsoltvarga23/coderev-2/main/get.ps1 | iex
 ```
-
-Vagy csak a CLI kézi fordítása:
 
 ```bash
-go build -o coderev ./cmd/coderev      # vagy coderev.exe Windowson
+# Linux / macOS — CLI telepítése egy paranccsal
+curl -fsSL https://raw.githubusercontent.com/zsoltvarga23/coderev-2/main/get.sh | bash
 ```
 
-Egyetlen statikus bináris, futásidejű függőség nélkül (a `git` CLI szükséges).
+A **Desktop GUI**-hoz (Windows/Linux) töltsd le a `CodeRev-win-Setup.exe`-t
+vagy a `.AppImage` fájlt a Releases oldalról.
+
+A telepítés és a frissítés minden részlete (kézi telepítés, forrásból
+fordítás fejlesztőknek, stb.): **[INSTALL.md](INSTALL.md)**.
 
 ## Használat
+
+### Parancssorból (CLI)
 
 ```bash
 coderev <branch> [opciók]
@@ -39,56 +128,71 @@ coderev feature/x
 # develop ellen, angol kimenettel, fájlba mentve
 coderev feature/x --base-ref origin/develop --lang en --out review.md
 
-# prompt megtekintése agent-futtatás nélkül
+# a prompt megtekintése AI-hívás nélkül (költségmentes teszt)
 coderev feature/x --dry-run
 
 # .coderev.json generálása a repo gyökerébe a megadott opciókkal
 coderev init --agent copilot --base-ref origin/develop --out review.md
-coderev init custom.json --lang en --force   # egyedi útvonal, meglévő felülírása
 
-# egyedi ügynök
+# egyedi AI-ügynök megadása
 coderev feature/x --agent-config '{"cmd":["mycli","review","--in","{prompt_file}"],"mode":"file"}'
 
-# strukturált NDJSON esemény-kimenet (a desktop GUI / automatizáció számára)
-coderev feature/x --format json
+# a CLI frissítése a legújabb kiadásra
+coderev update
 ```
 
 A flagek a `<branch>` argumentum előtt és után is megadhatók.
 
-## Mit csinál másképp a legacynél
+### Grafikus felületen (Desktop GUI)
 
-| Legacy hiba | Megoldás itt |
+1. **Nyisd meg** a repository-t a 📂 gombbal (vagy válaszd a legutóbb
+   használtak közül).
+2. Add meg a **branch**-et és a **bázis** referenciát (pl. `origin/main`) —
+   mindkettő autocomplete-tel segít.
+3. Válassz **AI-ügynököt** és **nyelvet**, majd nyomd meg a zöld
+   **Start review** gombot (vagy pipáld be a **Dry-run**-t egy AI nélküli
+   próbafutáshoz).
+4. Kövesd élőben a lépéseket, majd nézd meg a formázott review-t a
+   **Review** fülön, vagy a diffet a **Diff** fülön.
+5. Az elmúlt futások a **History** fülön érhetők el; egy kattintással
+   visszatölthetők és exportálhatók.
+
+## Frissítés
+
+| Komponens | Hogyan |
 |---|---|
-| Destruktív `git checkout` | Nincs checkout; `git diff`/`git show` ref-alapon |
-| Csendes fetch-hiba | Figyelmeztetés, `--strict-fetch`-csel végzetes |
-| Bájtszintű diff-csonkolás a hunk-elemzés előtt | A hunk-elemzés a teljes diffből; csonkolás csak a promptnak |
-| Kontextus a working tree-ből | Kontextus a `--head-ref`-ből (`git show`) |
-| `arg`/`file` módban a prompt a stdin-re is ment | Stdin csak `stdin` módban |
-| Nincs timeout / streaming / haladásjelzés | `--agent-timeout`, élő streaming, spinner + lépés-állapotok |
-
-## Konzolos visszajelzés
-
-A futás közben lépés-állapotok (✓/✗), spinner, eltelt idő és mennyiségi adatok
-jelennek meg, majd az AI válasza **élőben streamel** a konzolra. Pipe/CI alatt
-automatikusan animáció nélküli, sormintás kimenetre vált (vagy `--no-progress`).
+| **GUI** | A fejlécben megjelenő ⬆ gomb — csak akkor látszik, ha van új verzió; ellenőriz, letölt, újraindul. |
+| **CLI** | `coderev update` (`--check` kapcsolóval csak megnézi, van-e újabb). |
 
 ## Konfiguráció
 
-`.coderev.json` (a legacy formátummal kompatibilis), `CODEREV_*` környezeti
-változók, és CLI flagek. Precedencia: **CLI > env > JSON > beépített default**.
-Részletek: [docs/](docs/).
-
-A konfigfájlt a `coderev init [útvonal] [opciók]` paranccsal lehet legenerálni a
-repo gyökerébe. A megadott flagek bekerülnek a fájlba, a többi kulcs az
-alapértelmezett értékét kapja. Meglévő fájlt csak `--force` ír felül. Az `init`
-szándékosan **nem** olvas be létező konfigot vagy env-változót, hogy a kimenet
-kiszámítható legyen.
-
-## Fejlesztés
+A beállítások `.coderev.json` fájlban is rögzíthetők (repónként), így nem
+kell minden futtatáskor újra megadni az agentet, a nyelvet, a bázis
+referenciát, stb. Létrehozása:
 
 ```bash
-go test ./...      # minden csomag tesztje
-go vet ./...
+coderev init --agent claude --lang hu --base-ref origin/main
 ```
 
-Csomagstruktúra: [docs/03-go-ujratervezes.md](docs/03-go-ujratervezes.md).
+Precedencia: **CLI flag > környezeti változó (`CODEREV_*`) > `.coderev.json`
+> beépített alapérték**. A GUI-ban a **⚙ Settings** ablak ugyanezt a fájlt
+szerkeszti grafikusan.
+
+## Fejlesztőknek
+
+```bash
+# Motor (Go)
+go build -o coderev ./cmd/coderev
+go test ./...
+go vet ./...
+
+# Desktop GUI (.NET / Avalonia)
+cd coderev-desktop
+dotnet build
+dotnet test src/CodeRev.Core.Tests
+dotnet run --project src/CodeRev.App
+```
+
+- Repó-struktúra és tervezési döntések: [docs/03-go-ujratervezes.md](docs/03-go-ujratervezes.md)
+- Desktop GUI részletek: [coderev-desktop/README.md](coderev-desktop/README.md)
+- Kiadás készítése karbantartóknak: [RELEASING.md](RELEASING.md)
