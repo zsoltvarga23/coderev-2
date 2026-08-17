@@ -6,7 +6,7 @@ vagy angol nyelvű review-t: mi jó, mi hibás, mit érdemes még megcsinálni.
 Kétféleképp használható, ugyanazzal a motorral: parancssorból (**CLI**) vagy
 grafikus felületen (**Desktop GUI**).
 
-![coderev Desktop — Review nézet](docs/images/coderev-app-light.svg)
+![coderev Desktop — sötét és világos téma](docs/images/coderev-app-dark-and-light.png)
 
 ---
 
@@ -71,7 +71,7 @@ amely a korai 2000-es évek Windows-alkalmazásainak (Windows 2000 / XP)
 kinézetét idézi: bézs felületek, 3D "domború" gombok, szögletes sarkok,
 klasszikus kék kijelölés-szín.
 
-![coderev Desktop — Retró téma](docs/images/coderev-app-retro.svg)
+![coderev Desktop — Retró téma](docs/images/coderev-app-retro.png)
 
 A téma a fejlécben található 🌓 gomb legördülő menüjéből választható
 (*Világos / Sötét / Retro*), és a választás automatikusan megjegyződik a
